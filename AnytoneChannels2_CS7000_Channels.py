@@ -3,6 +3,17 @@ import csv
 import sys
 from decimal import Decimal
 
+
+# Check for correct number of arguments
+if len(sys.argv) != 3:
+    print("Usage: python AnytoneChannels2_CS7000_Channels.py input_file.csv output_file.csv")
+    print("       Convert Anytone CPS Channels File (CSV format) into column format to add to Connect System Contacts spreadsheet.");
+    print("")
+    print("       Credits:  Jason Johnson (k3jsj@arrl.net), https://github.com/K3JSJ/CS7000 ")
+    print("")      
+    sys.exit(1)
+
+
 # Header row for CS7000
 header = [
     "No.",
@@ -74,7 +85,7 @@ defaultRow = [
     "Off",
     "441",
     "Middle",
-    "Local simplex99",
+    "None",
     "None",
     "High",
     "Always",
@@ -103,11 +114,6 @@ defaultRow = [
     "None"
 ]
 
-# Check for correct number of arguments
-if len(sys.argv) != 3:
-    print("Usage: python AnytoneChannels2_CS7000_Channels.py input_file output_file")
-    print("       Convert Anytone CPS Channels File into column format to add to Connect System Contacts spreadsheet.");
-    sys.exit(1)
 
 # Get input and output file names from arguments
 input_file = sys.argv[1]
@@ -130,17 +136,19 @@ with open(input_file, mode='r', newline='') as infile:
             # Extract values from input file
             channelName = row[0]
             mode = row[1]
-            rx_freq = row[3]
-            tx_freq = row[4]
-            call_alias = row[5]
+            rx_freq = row[4]
+            tx_freq = row[3]
+            call_alias = row[36]
             timeslot = row[41]
             colorCode = row[38]
 
            
-	    # Prepare value for output file
+	        # Prepare value for output file
             outputRow[0] = rowNum
-            rowNum = rowNum + 1
             outputRow[1] = channelName
+
+            # output digital id per channel
+            outputRow[2] = rowNum
             outputRow[3] = colorCode
 	   
             if Decimal(timeslot) == 1:
@@ -150,8 +158,13 @@ with open(input_file, mode='r', newline='') as infile:
 
             outputRow[11] = rx_freq
             outputRow[17] = tx_freq
-            outputRow[19] = call_alias
 
-	    # If frequency UHF and mode DMR then output record
+            if call_alias == "-NULL-":
+                outputRow[19] = "None"
+            else:
+                outputRow[19] = call_alias
+
+	        # If frequency UHF and mode DMR then output record
             if (Decimal(rx_freq) >= 400) and ( mode == "DMR"): 
-               writer.writerow(outputRow)
+                writer.writerow(outputRow)
+                rowNum = rowNum + 1
