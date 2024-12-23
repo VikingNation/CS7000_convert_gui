@@ -263,7 +263,6 @@ with open(input_file, mode='r', newline='') as infile:
             outputRowAnalog[18] = tx_freq
 
             # Check if Transmit CTCSS is used
-            print("ctcss_encode is ", ctcss_encode)
             if ctcss_encode != "NONE":
                 outputRowAnalog[19] = "CTCSS"
                 outputRowAnalog[20] = ctcss_encode
@@ -271,7 +270,6 @@ with open(input_file, mode='r', newline='') as infile:
                 outputRowAnalog[19] = "NONE"
                 outputRowAnalog[20] = "NONE"
 
-            print("ctcss_decode is ", ctcss_decode)
             if ctcss_decode != "NONE":
                 outputRowAnalog[12] = "CTCSS"
                 outputRowAnalog[13] = ctcss_decode
