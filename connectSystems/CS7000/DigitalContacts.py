@@ -18,7 +18,6 @@ class DigitalContacts:
         input_file = self.input_file
         output_file = self.output_file
 
-        print("Input file type is Anytone\nNow converting ", self.__rowsInFile, " talk groups")
         # Open the input file for reading
         with open(input_file, mode='r', newline='') as infile:
             reader = csv.reader(infile)
@@ -39,7 +38,6 @@ class DigitalContacts:
         outfile.close()
         infile.close()
 
-        print("Complete!")
 
     def __DetermineFileType(self):
 

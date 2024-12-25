@@ -1,6 +1,6 @@
 #!/bin/env python
 import sys
-from DigitalContacts import DigitalContacts
+from connectSystems.CS7000.DigitalContacts import DigitalContacts
 
 # Output file columns
 # No, Call Alias, Call Type, Call ID, Receive Tone
