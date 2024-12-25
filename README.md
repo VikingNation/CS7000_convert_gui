@@ -1,19 +1,31 @@
-CS7000
+# CS7000 Code Plug Utilities
 
-Utilities to convert Anytone Talk Group, Channels, and Zones CSVs into the format to the CS7000 CPS uses in spreadsheets.
+Author:  Jason Johnson (k3jsj@arrl.net)
 
-Current scripts only convert DMR channels.  Support to analog will be added at a future date.  See note below about need to tailor Anytone Zones CSV to account for fact that there will not be any analog channels improted
 
-The recommended order of operations is:
+## Purpose
+Utilities to convert Anytone Talk Group, Channels, and Zones CSV files into format the CS7000 CPS uses.  Python programs convert Contacts, Channels, and Zones.  Channels support creation of CSV file for DMR and Analog channels.
 
+## Usage
+The following are steps to use the program:
+
+### Anytone CPS
 - Open Anytone CPS and explort Talkgroups, Zones, and Channels
+
+## Operating system command prompt
 - Run scripts against talkgroups, zones, and channels to create CSVs that are opened and copied into the CPS7000 spreadsheet files
+
+### CS7000 CPS
 - Export Contacts, Channels, and Zones from CS7000 CPS software.
+
+### Excel
 - Open convered talkgroups CSV in Excel and copy values.  Next, do a paste-special into the Contacts spreadsheet.  Save the file.
 - Open the converted channels CSV in Excel and copy values.  Select the DMR channels worksheets.  Past special into the spreadsheet.  Save the file.
 - Open the converted zones CSV in Excel and copy values.  Past special in to the zones spreadsheet. Save the file
-- Open the CS7000 CPS and first import channels, then channels, then zones.  Double check to make sure everything is mapped correctly
 
-Note:  The script to convert the channels detects DMR channels and only exports those at the moment.
-Note:  Be sure you edit the Anytone Zones to convert before running the script to remove any zones that have analog channels
-
+### CS7000 CPS
+- Open the CS7000 CPS.
+- Import the contacts spreadsheet
+- Import the channels spreadsheet
+- Import the zones spreadsheet
+- Verify everthing imported correctly
