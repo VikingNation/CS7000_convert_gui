@@ -20,7 +20,11 @@ class Channels:
     def Convert(self):
         if self.__fileType == "Anytone":
             self.ConvertAnytoneChannels()
-
+        if self.__fileType == "CS7000":
+            print("Input file is all ready is format for the CS7000.  Nothing to convert.")
+        if self.__fileType == "ERROR":
+            print("Error!  Input file is not the CSV format expected from Anytone CPS.")
+            return (-1)
 
     def ConvertAnytoneChannels(self):
         # Get input and output file names from arguments
@@ -147,6 +151,12 @@ class Channels:
                     headerHash = sha256(s.encode('utf-8')).hexdigest()
                     if (headerHash == "3e3c17d0e4d620a3a37b6c46783c29865803b31d77ea554e563c11a5b812a26e"):
                         self.__fileType = 'Anytone'
+                    else:
+                        if (headerHash == "0f5e98e8c8aa9beb2dba3ad016070b300fb65b2c6cb2c5e6c4c8c2df7d1d9d4f"):
+                            self.__fileType = 'CS7000'
+                        else:
+                            print("Could not determine type of input file\nHash of file header is ", headerHash)
+                            self.__fileType = 'ERROR'
 
                 numRows = numRows + 1
 
