@@ -13,6 +13,13 @@ class DigitalContacts:
     def Convert(self):
         if self.__fileType == "Anytone":
             self.ConvertAnytoneTalkGroups()
+        if self.__fileType == "CS7000":
+            print("Input file is all ready is format for the CS7000.  Nothing to convert.")
+        if self.__fileType == "ERROR":
+            print("Error!  Input file is not the CSV format expected from Anytone CPS.")
+            return (-1)
+
+
 
     def ConvertAnytoneTalkGroups(self):
         input_file = self.input_file
@@ -56,6 +63,12 @@ class DigitalContacts:
                    
                     if (headerHash == "3fcf4f8abf1017013669181c3b25ac2662c989e07fd05330250a6348b55baef2"):
                         self.__fileType = 'Anytone'
+                    else:
+                        if (headerHash == "439f8c974eedd60ad132dc94803757e7a0e6e85093aecdd8ef0e3a26f971ff1d"):
+                            self.__fileType = 'CS7000'
+                        else:
+                            print("Could not determine type of input file\nHash of file header is ", headerHash)
+                            self.__fileType = 'ERROR'
 
                 numRows = numRows + 1
 
