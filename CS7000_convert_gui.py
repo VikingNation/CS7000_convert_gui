@@ -13,28 +13,41 @@ import csv
 #           This source code was generated using Microsoft Co-Pilot
 
 
-def select_output_folder():
-    folder = filedialog.askdirectory()
-    if folder:
-        output_folder_var.set(f"Selected output folder: {folder}")
+def select_contacts_file():
+    file = filedialog.askopenfilename()
+    if file:
+        contacts_file_var.set(f"Selected contacts file: {file}")
+        debug_output('User selected contacts file')
 
-def select_input_folder():
-    folder = filedialog.askdirectory()
-    if folder:
-        input_folder_var.set(f"Selected input folder: {folder}")
+def select_channels_file():
+    file = filedialog.askopenfilename()
+    if file:
+        channels_file_var.set(f"Selected channels file: {file}")
+        debug_output('User selected channels file')
+
+def select_zone_file():
+    file = filedialog.askopenfilename()
+    if file:
+        zone_file_var.set(f"Selected zone file: {file}")
+        debug_output('User selected zone file')
+
+def debug_output(text):
+    debug_output_var.set(debug_output_var.get() + f'{text}')
 
 def convert_codeplug():
     print("Convert codeplug button clicked")
 
 def exit_application():
-    input_folder = input_folder_var.get().replace("Selected input folder: ", "")
-    output_folder = output_folder_var.get().replace("Selected output folder: ", "")
-    
-    with open('cs7000_convert_settings.csv', mode='w', newline='') as file:
+    contacts_file = contacts_file_var.get().replace("Selected contacts file: ", "")
+    channels_file = channels_file_var.get().replace("Selected channels file: ", "")
+    zone_file = zone_file_var.get().replace("Selected zone file: ", "")
+
+    with open('CS7000_convert_settings.csv', mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(['Input Folder', 'Output Folder'])
-        writer.writerow([input_folder, output_folder])
-    
+        writer.writerow(['Contacts File', 'Channels File', 'Zone File'])
+        writer.writerow([contacts_file, channels_file, zone_file])
+   
+    file.close()
     root.destroy()
 
 def read_csv_and_set_variables(file_path):
@@ -47,11 +60,14 @@ def read_csv_and_set_variables(file_path):
         variables = {header: value for header, value in zip(headers, data)}
 
         # Set variables
-        input_folder = variables.get('Input Folder', '')
-        output_folder = variables.get('Output Folder', '')
+        contacts_file = variables.get('Contacts File', '')
+        channels_file = variables.get('Channels File', '')
+        zone_file = variables.get('Zone File', '')
 
-        input_folder_var.set(f"Selected input folder: {input_folder}")
-        output_folder_var.set(f"Selected output folder: {output_folder}")
+        contacts_file_var.set(f"Selected contacts file: {contacts_file}")
+        channels_file_var.set(f"Selected channels file: {channels_file}")
+        zone_file_var.set(f"Selected zone file: {zone_file}")
+        debug_output('Read settings from CS7000_convert_setting.csv')
 
 # Create the main application window
 root = tk.Tk()
@@ -63,7 +79,7 @@ left_frame = ttk.Frame(root)
 right_frame = ttk.Frame(root)
 
 # Pack the frames
-left_frame.pack(side="left", padx=10, pady=10, fill="both", expand=True)
+left_frame.pack(side="left", padx=10, pady=10, fill="both", expand=False)
 right_frame.pack(side="right", padx=10, pady=10, fill="both", expand=True)
 
 # Create a frame for the radio buttons
@@ -77,27 +93,31 @@ channel_type = tk.StringVar(value="digital")
 radio_analog = ttk.Radiobutton(frame, text="Digital", variable=channel_type, value="digital")
 radio_digital_analog = ttk.Radiobutton(frame, text="Digital & Analog", variable=channel_type, value="digital_analog")
 
-
 # Pack radio buttons
 radio_analog.pack(anchor="w", padx=10, pady=5)
 radio_digital_analog.pack(anchor="w", padx=10, pady=5)
 
-
-# Create StringVar variables to hold folder paths
-output_folder_var = tk.StringVar()
-input_folder_var = tk.StringVar()
+# Create StringVar variables to hold files paths
+contacts_file_var = tk.StringVar()
+channels_file_var = tk.StringVar()
+zone_file_var = tk.StringVar()
 
 # Create buttons
-btn_select_output = ttk.Button(left_frame, text="Select Output Folder", command=select_output_folder)
-btn_select_input = ttk.Button(left_frame, text="Select Input Folder", command=select_input_folder)
+btn_select_contacts = ttk.Button(left_frame, text="Select Contacts File", command=select_contacts_file)
+btn_select_channels = ttk.Button(left_frame, text="Select Channels File", command=select_channels_file)
+btn_select_zone = ttk.Button(left_frame, text="Select Zone File", command=select_zone_file)
+
 btn_convert_codeplug = ttk.Button(left_frame, text="Convert Codeplug", command=convert_codeplug)
 btn_exit = ttk.Button(left_frame, text="Exit", command=exit_application)
 
 # Pack buttons and labels
-btn_select_output.pack(padx=10, pady=5, fill="x")
-ttk.Label(left_frame, textvariable=output_folder_var).pack(padx=10, pady=5, fill="x")
-btn_select_input.pack(padx=10, pady=5, fill="x")
-ttk.Label(left_frame, textvariable=input_folder_var).pack(padx=10, pady=5, fill="x")
+btn_select_contacts.pack(padx=10, pady=5, fill="x")
+ttk.Label(left_frame, textvariable=contacts_file_var).pack(padx=10, pady=5, fill="x")
+btn_select_channels.pack(padx=10, pady=5, fill="x")
+ttk.Label(left_frame, textvariable=channels_file_var).pack(padx=10, pady=5, fill="x")
+btn_select_zone.pack(padx=10, pady=5, fill="x")
+ttk.Label(left_frame, textvariable=zone_file_var).pack(padx=10, pady=5, fill="x")
+
 btn_convert_codeplug.pack(padx=10, pady=5, fill="x")
 btn_exit.pack(padx=10, pady=5, fill="x")
 
@@ -118,8 +138,9 @@ root.geometry("800x400")
 
 # Read CSV and set variables if the file exists
 try:
-    read_csv_and_set_variables('cs7000_convert_settings.csv')
+    read_csv_and_set_variables('CS7000_convert_settings.csv')
 except FileNotFoundError:
+    debug_output('Did not find CS7000_covert_setting.csv.  Please select location of files')
     pass
 
 
