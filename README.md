@@ -10,7 +10,7 @@ Utilities to convert Anytone Talk Group, Channels, and Zones CSV files into form
 The following are steps to use the program:
 
 ### Anytone CPS
-- Open Anytone CPS and explort Talkgroups, Zones, and Channels
+- Open Anytone CPS and export Talkgroups, Zones, and Channels
 
 ## Operating system command prompt
 - Launch the gui, python CS7000_convert_gui.py.
