@@ -1,10 +1,12 @@
 #!/bin/env python
 import tkinter as tk
-from tkinter import ttk, filedialog
 import csv
-import connectSystems.CS7000.Channels as Channels
-import connectSystems.CS7000.DigitalContacts as DigitalContacts
-import connectSystems.CS7000.Zones as Zones
+import os
+import platform
+from tkinter import ttk, filedialog
+from connectSystems.CS7000.Channels import  Channels
+from connectSystems.CS7000.DigitalContacts import DigitalContacts
+from connectSystems.CS7000.Zones import Zones
 
 # CS7000_convert_gui.py
 #
@@ -22,23 +24,39 @@ def select_output_directory():
         debug_output('User selected contacts file')
 
 
+def open_file_explorer(path):
+    if platform.system() == "Windows":
+        os.startfile(path)
+    elif platform.system() == "Darwin":  # macOS
+        os.system(f"open {path}")
+    elif platform.system() == "Linux":
+        os.system(f"xdg-open {path}")
+    else:
+        print("Unsupported operating system")
+
 def select_contacts_file():
-    file = filedialog.askopenfilename("Select contacts file to import")
+    file = filedialog.askopenfilename(title="Select contacts file to import")
     if file:
         contacts_file_var.set(f"Selected file: {file}")
         debug_output('User selected contacts file')
 
 def select_channels_file():
-    file = filedialog.askopenfilename("Select channels file to import")
+    file = filedialog.askopenfilename(title="Select channels file to import")
     if file:
         channels_file_var.set(f"Selected file: {file}")
         debug_output('User selected channels file')
 
 def select_zones_file():
-    file = filedialog.askopenfilename("Select zones file to import")
+    file = filedialog.askopenfilename(title = "Select zones file to import")
     if file:
         zones_file_var.set(f"Selected file: {file}")
         debug_output('User selected zones file')
+
+def getFilename(s):
+    return s.replace("Selected file: ", "")
+
+def getDirectoryname(s):
+    return s.replace("Selected directory: ", "")
 
 def debug_output(text):
     debug_output_var.set(debug_output_var.get() + '\n' + f'{text}')
@@ -46,15 +64,43 @@ def debug_output(text):
 def convert_codeplug():
     debug_output('Now converting files into format for CS7000')
 
+    output_directory = getDirectoryname(output_directory_var.get())
+
+
+    # Convert contact file
+    converted_contacts_file = output_directory + "/CS7000_contacts.csv"
+    contacts = DigitalContacts(getFilename(contacts_file_var.get()), converted_contacts_file)
+    contacts.Convert()
+    debug_output("Converted talkgroup file in " + converted_contacts_file)
+
+    # Convert channels file
+    converted_ch_dmr_file = output_directory + "/CS7000_channels_dmr.csv"
+    converted_ch_analog_file = output_directory + "/CS7000_channels_analog.csv"
+    channels = Channels(getFilename(channels_file_var.get()), converted_ch_dmr_file, converted_ch_analog_file)
+    channels.Convert()
+    debug_output("Converted dmr channels to " +  converted_ch_dmr_file)
+    debug_output("Converted analog channels to " +  converted_ch_analog_file)
+
+    # Convert zones file
+    zone_file = getFilename(zones_file_var.get())
+    converted_zones_file = output_directory + "/CS7000_zones.csv"
+    zones = Zones(getFilename(zones_file_var.get()), converted_zones_file)
+    zones.Convert()
+    debug_output("Converted zones file in " + converted_zones_file)
+    
+    open_file_explorer(output_directory)
+    debug_output("Now opening folder containing converted output files")
+
 def exit_application():
     contacts_file = contacts_file_var.get().replace("Selected file: ", "")
     channels_file = channels_file_var.get().replace("Selected file: ", "")
     zones_file = zones_file_var.get().replace("Selected file: ", "")
+    output_directory = getDirectoryname(output_directory_var.get())
 
     with open('CS7000_convert_settings.csv', mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(['Contacts File', 'Channels File', 'Zone File'])
-        writer.writerow([contacts_file, channels_file, zones_file])
+        writer.writerow(['Contacts File', 'Channels File', 'Zone File', 'Output Directory'])
+        writer.writerow([contacts_file, channels_file, zones_file, output_directory])
    
     file.close()
     root.destroy()
@@ -72,10 +118,12 @@ def read_csv_and_set_variables(file_path):
         contacts_file = variables.get('Contacts File', '')
         channels_file = variables.get('Channels File', '')
         zones_file = variables.get('Zone File', '')
+        output_directory = variables.get('Output Directory', '')
 
         contacts_file_var.set(f"Selected file: {contacts_file}")
         channels_file_var.set(f"Selected file: {channels_file}")
         zones_file_var.set(f"Selected file: {zones_file}")
+        output_directory_var.set(f"Selected directory: {output_directory}")
         debug_output('Read settings from CS7000_convert_setting.csv')
 
 # Create the main application window
