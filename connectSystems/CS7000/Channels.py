@@ -6,7 +6,7 @@ from decimal import Decimal
 
 class Channels:
 
-    def __init__(self, input_file,output_file_dmr, output_file_analog):
+    def __init__(self, input_file,output_file_dmr, output_file_analog, includeAnalogChannels):
         self.input_file = input_file
         self.output_file_dmr = output_file_dmr
         self.output_file_analog = output_file_analog
@@ -14,6 +14,7 @@ class Channels:
         self.__fileType = ''
         self.__DetermineFileType()
 
+        self.__includeAnalogChannels = includeAnalogChannels
         self.__UhfChannels = {}
         # Setup header and default row records
         self.__SetArrays()
@@ -145,7 +146,7 @@ class Channels:
                         writer_dmr.writerow(outputRowDMR)
                         rowNum_dmr = rowNum_dmr + 1
 
-                    if (Decimal(rx_freq) >= 400) and ( mode == "FM"):
+                    if (Decimal(rx_freq) >= 400) and ( mode == "FM") and self.__includeAnalogChannels:
                         writer_analog.writerow(outputRowAnalog)
                         rowNum_analog = rowNum_analog + 1
 
@@ -185,7 +186,9 @@ class Channels:
     def LoadChannelNames(self, dmr_channels, analog_channels):
         inputs = []
         inputs.append(dmr_channels)
-        inputs.append(analog_channels)
+
+        if (self.__includeAnalogChannels):
+            inputs.append(analog_channels)
 
         processing_dmr_file = True
         for input_file in inputs:

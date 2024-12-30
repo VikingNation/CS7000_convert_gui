@@ -57,7 +57,7 @@ class Zones:
                             if element in self.__uhfChannels:
                               outputRow.append(element)
                             else:
-                                print("Channel ", element, " is not a UHF channel")
+                                print("Filtering out channel ", element)
                         else:
                             outputRow.append(element)
 

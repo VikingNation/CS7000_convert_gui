@@ -17,6 +17,6 @@ input_file = sys.argv[1]
 output_file_dmr = sys.argv[2]
 output_file_analog = sys.argv[3]
 
-channels = Channels(input_file, output_file_dmr, output_file_analog)
+channels = Channels(input_file, output_file_dmr, output_file_analog, True)
 channels.Convert()
 

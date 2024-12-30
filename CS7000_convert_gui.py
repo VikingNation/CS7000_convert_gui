@@ -15,7 +15,7 @@ from connectSystems.CS7000.Zones import Zones
 #           Program prompts for directory and assumes files are called talkgroups.csv, channels.csv, and zones.csv
 #           Program outputs contactsc.csv, channels.csv, and zones.csv into directory selected
 #
-#           This source code was generated using Microsoft Co-Pilot
+#           Portions of this source code were generated using Microsoft Co-Pilot
 
 def select_output_directory():
     directory = filedialog.askdirectory(title="Chose directorty to output files")
@@ -74,11 +74,17 @@ def convert_codeplug():
     debug_output("Converted talkgroup file in " + converted_contacts_file)
 
     # Convert channels file
+    if ( channel_type.get() == "digital_analog"):
+        includeAnalogChannels = True
+    else:
+        includeAnalogChannels = False
+
+    debug_output("Including analog channels in conversion is " + str(includeAnalogChannels))
+
     converted_ch_dmr_file = output_directory + "/CS7000_channels_dmr.csv"
     converted_ch_analog_file = output_directory + "/CS7000_channels_analog.csv"
-    channels = Channels(getFilename(channels_file_var.get()), converted_ch_dmr_file, converted_ch_analog_file)
+    channels = Channels(getFilename(channels_file_var.get()), converted_ch_dmr_file, converted_ch_analog_file, includeAnalogChannels)
     uhfChannels = channels.Convert()
-    print(uhfChannels)
     debug_output("Converted dmr channels to " +  converted_ch_dmr_file)
     debug_output("Converted analog channels to " +  converted_ch_analog_file)
 
@@ -129,7 +135,7 @@ def read_csv_and_set_variables(file_path):
 
 # Create the main application window
 root = tk.Tk()
-root.title("CS7000 Code Plug Utility")
+root.title("CS7000 Code Plug Utility - By Jason Johnson <k3jsj@arrl.net>  Version 1.1")
 
 
 
@@ -149,11 +155,11 @@ frame.pack(padx=10, pady=10, fill="x")
 channel_type = tk.StringVar(value="digital")
 
 # Create radio buttons
-radio_analog = ttk.Radiobutton(frame, text="Digital", variable=channel_type, value="digital")
+radio_digital = ttk.Radiobutton(frame, text="Digital", variable=channel_type, value="digital")
 radio_digital_analog = ttk.Radiobutton(frame, text="Digital & Analog", variable=channel_type, value="digital_analog")
 
 # Pack radio buttons
-radio_analog.pack(anchor="w", padx=10, pady=5)
+radio_digital.pack(anchor="w", padx=10, pady=5)
 radio_digital_analog.pack(anchor="w", padx=10, pady=5)
 
 # Create StringVar variables to hold files paths
