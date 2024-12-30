@@ -19,6 +19,7 @@ class Channels:
 
     def Convert(self):
         if self.__fileType == "Anytone":
+            print("Converting anytone channels file")
             self.ConvertAnytoneChannels()
         if self.__fileType == "CS7000":
             print("Input file is all ready is format for the CS7000.  Nothing to convert.")
@@ -62,21 +63,33 @@ class Channels:
                     readHeaderRow = 1
                 else:
                     # Extract DMR/analog shared values from input file
-                    channelName = row[0]
-                    mode = row[1]
-                    channelSpacing = row[2]
+                    channelName = row[1]
+                    mode = row[4]
+
+                    if ( mode == "A-Analog"):
+                        mode = "FM"
+                    if ( mode == "D-Digital"):
+                        mode = "DMR"
+
+                    channelSpacing = row[6]
+
+                    if ( channelSpacing == "25K"):
+                        channelSpacing = 25.0
+                    else:
+                        channelSpacing = 12.5
+
                     tx_freq = row[3]
-                    rx_freq = row[4]
+                    rx_freq = row[2]
 
 
                     # Extract mode specifci values from input file
                     if ( mode == "DMR"):
-                        call_alias = row[36]
-                        timeslot = row[41]
-                        colorCode = row[38]
+                        call_alias = row[9]
+                        timeslot = row[21]
+                        colorCode = row[20]
                     else:
-                        ctcss_decode = row[18]
-                        ctcss_encode = row[19]
+                        ctcss_decode = row[7]
+                        ctcss_encode = row[8]
 
 
                     if ( mode == "DMR"):
@@ -108,14 +121,14 @@ class Channels:
                         outputRowAnalog[18] = tx_freq
 
                         # Check if Transmit CTCSS is used
-                        if ctcss_encode != "NONE":
+                        if ctcss_encode != "Off":
                             outputRowAnalog[19] = "CTCSS"
                             outputRowAnalog[20] = ctcss_encode
                         else:
                             outputRowAnalog[19] = "NONE"
                             outputRowAnalog[20] = "NONE"
 
-                        if ctcss_decode != "NONE":
+                        if ctcss_decode != "Off":
                             outputRowAnalog[12] = "CTCSS"
                             outputRowAnalog[13] = ctcss_decode
                         else:
@@ -149,7 +162,7 @@ class Channels:
                         s = s + e[1]
 
                     headerHash = sha256(s.encode('utf-8')).hexdigest()
-                    if (headerHash == "3e3c17d0e4d620a3a37b6c46783c29865803b31d77ea554e563c11a5b812a26e"):
+                    if (headerHash == "0599f2862ac011669d18fb17ecd7077bfa5e0b57584c3f7385fe0231d8b1e033"):
                         self.__fileType = 'Anytone'
                     else:
                         if (headerHash == "0f5e98e8c8aa9beb2dba3ad016070b300fb65b2c6cb2c5e6c4c8c2df7d1d9d4f"):
