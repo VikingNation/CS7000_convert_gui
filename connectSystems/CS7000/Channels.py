@@ -14,6 +14,7 @@ class Channels:
         self.__fileType = ''
         self.__DetermineFileType()
 
+        self.__UhfChannels = {}
         # Setup header and default row records
         self.__SetArrays()
 
@@ -21,11 +22,14 @@ class Channels:
         if self.__fileType == "Anytone":
             print("Converting anytone channels file")
             self.ConvertAnytoneChannels()
+            self.LoadChannelNames(self.output_file_dmr, self.output_file_analog)
+
         if self.__fileType == "CS7000":
             print("Input file is all ready is format for the CS7000.  Nothing to convert.")
         if self.__fileType == "ERROR":
             print("Error!  Input file is not the CSV format expected from Anytone CPS.")
             return (-1)
+
 
     def ConvertAnytoneChannels(self):
         # Get input and output file names from arguments
@@ -176,6 +180,33 @@ class Channels:
             self.__rowsInFile = numRows
 
         infile.close()
+
+    def LoadChannelNames(self, dmr_channels, analog_channels):
+        inputs = []
+        inputs.append(dmr_channels)
+        inputs.append(analog_channels)
+
+        processing_dmr_file = True
+        for input_file in inputs:
+            with open(input_file, mode='r', newline='') as infile:
+                reader = csv.reader(infile)
+                next(reader)
+                for row in reader:
+                    channelName = row[1]
+                    channelSpacing = row[3]
+                    rx_freq = row[11]
+                    rx = Decimal(rx_freq)
+
+                    if processing_dmr_file == True:
+                        tx_freq = row[17]
+                    else:
+                        tx_freq = row[18]
+
+                    tx = Decimal(tx_freq)
+                    if ( (rx >= 400) and (rx <= 512)) and ((tx >= 400) and (tx <=512)):
+                        self.__UhfChannels[channelName] = True
+                infile.close()
+                processing_dmr_file = False
 
     def __SetArrays(self):
 
