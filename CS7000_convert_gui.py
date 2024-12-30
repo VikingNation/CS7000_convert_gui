@@ -77,14 +77,15 @@ def convert_codeplug():
     converted_ch_dmr_file = output_directory + "/CS7000_channels_dmr.csv"
     converted_ch_analog_file = output_directory + "/CS7000_channels_analog.csv"
     channels = Channels(getFilename(channels_file_var.get()), converted_ch_dmr_file, converted_ch_analog_file)
-    channels.Convert()
+    uhfChannels = channels.Convert()
+    print(uhfChannels)
     debug_output("Converted dmr channels to " +  converted_ch_dmr_file)
     debug_output("Converted analog channels to " +  converted_ch_analog_file)
 
     # Convert zones file
     zone_file = getFilename(zones_file_var.get())
     converted_zones_file = output_directory + "/CS7000_zones.csv"
-    zones = Zones(getFilename(zones_file_var.get()), converted_zones_file)
+    zones = Zones(getFilename(zones_file_var.get()), converted_zones_file, uhfChannels)
     zones.Convert()
     debug_output("Converted zones file in " + converted_zones_file)
     

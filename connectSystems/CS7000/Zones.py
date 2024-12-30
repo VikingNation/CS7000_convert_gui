@@ -4,13 +4,21 @@ from hashlib import sha256
 
 class Zones:
 
-    def __init__(self, input_file, output_file):
+    def __init__(self, input_file, output_file, uhfChannels):
         self.input_file = input_file
         self.output_file = output_file
 
         self.__fileType = ''
         self.__DetermineFileType()
         self.__setArrays()
+        self.__uhfChannels = uhfChannels.copy()
+
+        if len(self.__uhfChannels) == 0:
+            self.__channelFilterProvided = False
+        else:
+            self.__channelFilterProvided = True
+
+
 
     def Convert(self):
         if self.__fileType == "Anytone":
@@ -44,9 +52,19 @@ class Zones:
                     outputRow.append(zoneName)
                     parsedZones = zoneList.split("|")
                     for element in parsedZones:
-                        outputRow.append(element)
+                        # Verify that channel is UHF before we add it to the Zone list
+                        if self.__channelFilterProvided:
+                            if element in self.__uhfChannels:
+                              outputRow.append(element)
+                            else:
+                                print("Channel ", element, " is not a UHF channel")
+                        else:
+                            outputRow.append(element)
 
-                    if rowsRead > 1:
+                    # Check if there are any UHF channels in this zone
+                    # first two elements of row are row number and zonename
+                    if (rowsRead > 1) and (len(outputRow) >= 3):
+                        # There are UHF channels.  Output row and increment row number
                         writer.writerow(outputRow)
                         rowNum = rowNum + 1
 

@@ -23,6 +23,7 @@ class Channels:
             print("Converting anytone channels file")
             self.ConvertAnytoneChannels()
             self.LoadChannelNames(self.output_file_dmr, self.output_file_analog)
+            return (self.__UhfChannels.copy())
 
         if self.__fileType == "CS7000":
             print("Input file is all ready is format for the CS7000.  Nothing to convert.")
