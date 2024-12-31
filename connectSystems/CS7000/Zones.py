@@ -1,6 +1,7 @@
 #!/bin/env python
 import csv
 from hashlib import sha256
+import xlsxwriter
 
 class Zones:
 
@@ -30,6 +31,12 @@ class Zones:
         input_file = self.input_file
         output_file = self.output_file
 
+        output_spreadsheet = output_file.replace(".csv", ".xlsx")
+
+        print("spreadsheet file name", output_spreadsheet)
+        workbook = xlsxwriter.Workbook(output_spreadsheet)
+        worksheet = workbook.add_worksheet("Zones")
+
         # Open the input file for reading
         with open(input_file, mode='r', newline='') as infile:
             reader = csv.reader(infile)
@@ -41,6 +48,13 @@ class Zones:
                 rowsRead = 1
                 # Output header row
                 writer.writerow(self.__zoneHeader)
+
+                # Output the header row
+                col = 0
+                for colVal in self.__zoneHeader:
+                    worksheet.write(0, col, colVal)
+                    col = col + 1
+
                 # Process each row in the input file
                 for row in reader:
                     outputRow = []
@@ -66,12 +80,17 @@ class Zones:
                     if (rowsRead > 1) and (len(outputRow) >= 3):
                         # There are UHF channels.  Output row and increment row number
                         writer.writerow(outputRow)
+                        col = 0
+                        for colVal in outputRow:
+                            worksheet.write(rowNum, col, colVal)
+                            col = col + 1
                         rowNum = rowNum + 1
 
                     rowsRead = rowsRead + 1
 
         infile.close()
         outfile.close()
+        workbook.close()
 
     def __DetermineFileType(self):
 
