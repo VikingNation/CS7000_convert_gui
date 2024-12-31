@@ -33,7 +33,6 @@ class Zones:
 
         output_spreadsheet = output_file.replace(".csv", ".xlsx")
 
-        print("spreadsheet file name", output_spreadsheet)
         workbook = xlsxwriter.Workbook(output_spreadsheet)
         worksheet = workbook.add_worksheet("Zones")
 

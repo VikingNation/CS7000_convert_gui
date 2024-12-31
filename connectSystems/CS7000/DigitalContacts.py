@@ -1,5 +1,6 @@
 import csv
 from hashlib import sha256
+import xlsxwriter
 
 class DigitalContacts:
 
@@ -25,6 +26,12 @@ class DigitalContacts:
         input_file = self.input_file
         output_file = self.output_file
 
+        output_spreadsheet = output_file.replace(".csv", ".xlsx")
+
+        workbook = xlsxwriter.Workbook(output_spreadsheet)
+        worksheet = workbook.add_worksheet("DMR_Contacts")
+
+
         # Open the input file for reading
         with open(input_file, mode='r', newline='') as infile:
             reader = csv.reader(infile)
@@ -32,8 +39,12 @@ class DigitalContacts:
             # Open the output file for writing
             with open(output_file, mode='w', newline='') as outfile:
                 writer = csv.writer(outfile)
-                
+
+
                 # Process each row in the input file
+                # the first row contains the header row
+                # subsequent rows contain talk groups
+                rowNum = 0 
                 for row in reader:
                     number = row[0]
                     radio_id = row[1]
@@ -41,9 +52,16 @@ class DigitalContacts:
                     call_type = row[3]
                     receive_tone = "No"
                     writer.writerow([number, call_alias, call_type, radio_id, receive_tone])
+                    worksheet.write(rowNum, 0, number)
+                    worksheet.write(rowNum, 1, call_alias)
+                    worksheet.write(rowNum, 2, call_type)
+                    worksheet.write(rowNum, 3, radio_id)
+                    worksheet.write(rowNum, 4, receive_tone)
+                    rowNum = rowNum + 1
 
         outfile.close()
         infile.close()
+        workbook.close()
 
 
     def __DetermineFileType(self):
