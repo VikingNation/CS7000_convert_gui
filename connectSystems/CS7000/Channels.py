@@ -77,6 +77,16 @@ class Channels:
                     if ( mode == "D-Digital"):
                         mode = "DMR"
 
+                    power = row[5]
+
+                    # CS7000 only supports Low and High power.  Convert power by "rounding down" to lower power
+                    if ( power == "Turbo"):
+                        power = "High"
+
+                    if ( power == "Mid"):
+                        power = "Low"
+
+
                     channelSpacing = row[6]
 
                     if ( channelSpacing == "25K"):
@@ -119,6 +129,8 @@ class Channels:
                             outputRowDMR[19] = "None"
                         else:
                             outputRowDMR[19] = call_alias
+
+                        outputRowDMR[21] = power
                     else:
                         outputRowAnalog[0] = rowNum_analog
                         outputRowAnalog[1] = channelName
@@ -141,6 +153,7 @@ class Channels:
                             outputRowAnalog[12] = "NONE"
                             outputRowAnalog[13] = "NONE"
 
+                        outputRowAnalog[22] = power
 
                     if (Decimal(rx_freq) >= 400) and ( mode == "DMR"):
                         writer_dmr.writerow(outputRowDMR)

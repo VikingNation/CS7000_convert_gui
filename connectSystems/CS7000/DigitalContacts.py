@@ -39,7 +39,7 @@ class DigitalContacts:
                     radio_id = row[1]
                     call_alias = row[2]
                     call_type = row[3]
-                    receive_tone = row[4]
+                    receive_tone = "No"
                     writer.writerow([number, call_alias, call_type, radio_id, receive_tone])
 
         outfile.close()
