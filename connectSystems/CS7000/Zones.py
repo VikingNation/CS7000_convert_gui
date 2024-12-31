@@ -19,8 +19,6 @@ class Zones:
         else:
             self.__channelFilterProvided = True
 
-
-
     def Convert(self):
         if self.__fileType == "Anytone":
             self.ConvertAnytoneZones()
@@ -31,64 +29,55 @@ class Zones:
         input_file = self.input_file
         output_file = self.output_file
 
-        output_spreadsheet = output_file.replace(".csv", ".xlsx")
-
-        workbook = xlsxwriter.Workbook(output_spreadsheet)
+        workbook = xlsxwriter.Workbook(output_file)
         worksheet = workbook.add_worksheet("Zones")
 
         # Open the input file for reading
         with open(input_file, mode='r', newline='') as infile:
             reader = csv.reader(infile)
 
-            # Open the output file for writing
-            with open(output_file, mode='w', newline='') as outfile:
-                writer = csv.writer(outfile)
-                rowNum = 1
-                rowsRead = 1
-                # Output header row
-                writer.writerow(self.__zoneHeader)
+            rowNum = 1
+            rowsRead = 1
 
-                # Output the header row
-                col = 0
-                for colVal in self.__zoneHeader:
-                    worksheet.write(0, col, colVal)
-                    col = col + 1
+            # Output the header row
+            col = 0
+            for colVal in self.__zoneHeader:
+                worksheet.write(0, col, colVal)
+                col = col + 1
 
-                # Process each row in the input file
-                for row in reader:
-                    outputRow = []
-                    # Extract values from input file
-                    zoneName = row[1]
-                    zoneList = row[2]
-                    # Append row number, Zone Name, and List of channels in Zone
-                    outputRow.append(rowNum)
-                    outputRow.append(zoneName)
-                    parsedZones = zoneList.split("|")
-                    for element in parsedZones:
-                        # Verify that channel is UHF before we add it to the Zone list
-                        if self.__channelFilterProvided:
-                            if element in self.__uhfChannels:
-                              outputRow.append(element)
-                            else:
-                                print("Filtering out channel ", element)
+            # Process each row in the input file
+            for row in reader:
+                outputRow = []
+                # Extract values from input file
+                zoneName = row[1]
+                zoneList = row[2]
+                # Append row number, Zone Name, and List of channels in Zone
+                outputRow.append(rowNum)
+                outputRow.append(zoneName)
+                parsedZones = zoneList.split("|")
+                for element in parsedZones:
+                    # Verify that channel is UHF before we add it to the Zone list
+                    if self.__channelFilterProvided:
+                        if element in self.__uhfChannels:
+                          outputRow.append(element)
                         else:
-                            outputRow.append(element)
+                            print("Filtering out channel ", element)
+                    else:
+                        outputRow.append(element)
 
-                    # Check if there are any UHF channels in this zone
-                    # first two elements of row are row number and zonename
-                    if (rowsRead > 1) and (len(outputRow) >= 3):
-                        # There are UHF channels.  Output row and increment row number
-                        writer.writerow(outputRow)
-                        col = 0
-                        for colVal in outputRow:
-                            worksheet.write(rowNum, col, colVal)
-                            col = col + 1
-                        rowNum = rowNum + 1
+                # Check if there are any UHF channels in this zone
+                # first two elements of row are row number and zonename
+                if (rowsRead > 1) and (len(outputRow) >= 3):
+                    # There are UHF channels.  Output row and increment row number
+                    col = 0
+                    for colVal in outputRow:
+                        worksheet.write(rowNum, col, colVal)
+                        col = col + 1
+                    rowNum = rowNum + 1
 
-                    rowsRead = rowsRead + 1
+                rowsRead = rowsRead + 1
 
         infile.close()
-        outfile.close()
         workbook.close()
 
     def __DetermineFileType(self):
