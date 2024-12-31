@@ -7,8 +7,8 @@ from connectSystems.CS7000.DigitalContacts import DigitalContacts
 
 # Check for correct number of arguments
 if len(sys.argv) != 3:
-    print("Usage: python AnytonTalkGroups2_CS7000_Contacts.py input_file.csv output_file.csv")
-    print("       Convert Anytone CPS Talk group file (CSV format) into column format to add to Connect System Contacts spreadsheet.");
+    print("Usage: python AnytonTalkGroups2_CS7000_Contacts.py input_file.csv output_file.xlsx")
+    print("       Convert Anytone CPS Talk group file (CSV format) into column format of Connect System Contacts spreadsheet.");
     print("")
     print("       Credits:  Jason Johnson (k3jsj@arrl.net), https://github.com/K3JSJ/CS7000 ")
     print("")

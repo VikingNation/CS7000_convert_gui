@@ -5,7 +5,7 @@ from connectSystems.CS7000.Zones import Zones
 
 # Check for correct number of arguments
 if len(sys.argv) != 3:
-    print("Usage: python AnytoneZones2_CS7000_Zones.py input_file.csv output_file.csv")
+    print("Usage: python AnytoneZones2_CS7000_Zones.py input_file.csv output_file.xlsx")
     print("       Convert Anytone CPS Zones File (CSV format) into spreadsheet to import into Connect System CPS.");
     print("       Note:  if there are VHF channels they will not be eliminated using this utility")
     print("")
