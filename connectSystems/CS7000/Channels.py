@@ -2,7 +2,7 @@ import csv
 import sys
 from hashlib import sha256
 from decimal import Decimal
-
+import xlsxwriter
 
 class Channels:
 
@@ -59,6 +59,36 @@ class Channels:
             # Output header row
             writer_dmr.writerow(self.__header_dmr)
             writer_analog.writerow(self.__header_analog)
+
+            # Create worksheets of CS7000 spreadsheet
+            output_spreadsheet = "CS7000_channels.xlsx"
+
+            workbook = xlsxwriter.Workbook(output_spreadsheet)
+            analogWorksheet = workbook.add_worksheet("Analog Channels")
+            digitalWorksheet = workbook.add_worksheet("Digital Channels")
+            easyChannelsWorksheet = workbook.add_worksheet("Easy Trunking Channels")
+            easyPoolWorksheet = workbook.add_worksheet("Easy Trunking Pool")
+
+
+            col = 0
+            for colVal in self.__header_dmr:
+                digitalWorksheet.write(0, col, colVal)
+                col = col + 1
+
+            col = 0
+            for colVal in self.__header_analog:
+                analogWorksheet.write(0, col, colVal)
+                col = col + 1
+
+            col = 0
+            for colVal in self.__header_easyTrunkingChannels:
+                easyChannelsWorksheet.write(0, col, colVal)
+                col = col + 1
+
+            col = 0
+            for colVal in self.__header_easyTrunkingPool:
+                easyPoolWorksheet.write(0, col, colVal)
+                col = col + 1
 
             readHeaderRow = 0
             # Process each row in the input file
@@ -157,15 +187,28 @@ class Channels:
 
                     if (Decimal(rx_freq) >= 400) and ( mode == "DMR"):
                         writer_dmr.writerow(outputRowDMR)
+
+                        col = 0
+                        for colVal in outputRowDMR:
+                            digitalWorksheet.write(rowNum_dmr, col, colVal)
+                            col = col + 1
+
                         rowNum_dmr = rowNum_dmr + 1
 
                     if (Decimal(rx_freq) >= 400) and ( mode == "FM") and self.__includeAnalogChannels:
                         writer_analog.writerow(outputRowAnalog)
+
+                        col = 0
+                        for colVal in outputRowAnalog:
+                            analogWorksheet.write(rowNum_analog, col, colVal)
+                            col = col + 1
+
                         rowNum_analog = rowNum_analog + 1
 
         infile.close()
         outfile_analog.close()
         outfile_dmr.close()
+        workbook.close()
 
     def __DetermineFileType(self):
 
@@ -402,4 +445,57 @@ class Channels:
             "Auto Start Voting"
         ]
 
+        self.__header_easyTrunkingChannels = [
+            "No.",
+            "Channel Alias",
+            "Digital ID [Per Each Channel]",
+            "Color Code",
+            "Slot Operation",
+            "Scan/Roam/Vote List",
+            "Auto Start Scan",
+            "Rx Only",
+            "Talk Around",
+            "Lone Worker",
+            "VOX",
+            "Receive Frequency [MHz]",
+            "Rx Ref Frequency",
+            "Rx Group List",
+            "Emergency Alarm Indication",
+            "Emergency Alarm Ack",
+            "Emergency Call Indication",
+            "Transmit Frequency [MHz]",
+            "Tx Ref Frequency",
+            "Tx Contact Name",
+            "Emergency System",
+            "Power Level",
+            "Tx Admit",
+            "Tx Time-Out Time [s]",
+            "TOT Re-Key Time [s]",
+            "TOT Pre-Alert Time [s]",
+            "Private Call Confirmed",
+            "Data Call Confirmed",
+            "Encryption",
+            "Encryption Type",
+            "Encryption Key List",
+            "Pseudo Trunk",
+            "Pseudo Trunk Designated TX",
+            "Pilot_Freq Direct Mode",
+            "Easy Trunking Mode",
+            "Easy Trunking Sites",
+            "TDMA Direct Mode",
+            "Digital Channel Type",
+            "In Call Criteria",
+            "Encryption Ignore RX Clear Voice"
+        ]
+
+        self.__header_easyTrunkingPool = [
+            "No",
+            "Channel Alias",
+            "Color Code",
+            "Receive Frequency",
+            "RX Ref Frequency",
+            "Transmit Frequency",
+            "TX Ref Frequency",
+            "Slot Operation"
+        ]
 
