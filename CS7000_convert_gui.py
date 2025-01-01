@@ -3,7 +3,6 @@ import tkinter as tk
 import csv
 import os
 import platform
-import pyi_splash
 from tkinter import ttk, filedialog
 from connectSystems.CS7000.Channels import  Channels
 from connectSystems.CS7000.DigitalContacts import DigitalContacts
@@ -138,6 +137,9 @@ def getConfigFolderPath():
 
     return config_folder_path
 
+def raise_above_all(window):
+    window.attributes('-topmost', 1)
+    window.attributes('-topmost', 0)
 
 def clear_and_rebuild():
     root.title("CS7000 Code Plug Utility - By Jason Johnson (K3JSJ) <k3jsj@arrl.net>  Version 1.2")
@@ -204,6 +206,8 @@ def clear_and_rebuild():
     # resize the window
     root.geometry("1200x500+0+0")
 
+    raise_above_all(root)
+
 
 def reject_terms():
     print("Rejected terms of use")
@@ -211,6 +215,7 @@ def reject_terms():
 
 # Create the main application window
 try:
+    import pyi_splash
     pyi_splash.close()
 except:
     pass
@@ -245,6 +250,9 @@ accept_button.pack(side=tk.LEFT, padx=20, pady=10)
 reject_button = tk.Button(root, text="Reject", command=reject_terms)
 reject_button.pack(side=tk.RIGHT, padx=20, pady=10)
 root.geometry("800x500+0+0")
+
+raise_above_all(root)
+
 
 # Start the main event loop
 root.mainloop()
