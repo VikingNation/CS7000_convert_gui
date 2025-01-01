@@ -3,6 +3,7 @@ import tkinter as tk
 import csv
 import os
 import platform
+import pyi_splash
 from tkinter import ttk, filedialog
 from connectSystems.CS7000.Channels import  Channels
 from connectSystems.CS7000.DigitalContacts import DigitalContacts
@@ -118,123 +119,110 @@ def read_csv_and_set_variables(file_path):
         channel_type_var.set(f"{channel_type}")
         debug_output('Read settings from CS7000_convert_setting.csv')
 
-def disclaimer():
-    def on_accept():
-        nonlocal accepted
-        accepted = True
-        root.destroy()
+def clear_and_rebuild():
+    root.title("CS7000 Code Plug Utility - By Jason Johnson (K3JSJ) <k3jsj@arrl.net>  Version 1.2")
 
-    def on_reject():
-        nonlocal accepted
-        accepted = False
-        root.destroy()
+    # Destroy all existing widgets
+    for widget in root.winfo_children():
+        widget.destroy()
 
-    accepted = False
-    root = tk.Tk()
-    root.title("Disclaimer")
+    # Create left and right frames
+    left_frame = ttk.Frame(root)
+    right_frame = ttk.Frame(root)
 
-    root.geometry("800x500+0+0")
+    # Pack the frames
+    left_frame.pack(side="left", padx=10, pady=10, fill="both", expand=True)
+    right_frame.pack(side="right", padx=10, pady=10, fill="both", expand=True)
 
-    disclaim_text = "DISCLAIMER and TERMS OF USE:\nBy using this software, you acknowledge and agree that you do so at your own risk. The author of this software makes no guarantees, representations, or warranties of any kind, express or implied, regarding the accuracy, reliability, or completeness of the software's output. The author shall not be held liable for any errors, omissions, or any losses, injuries, or damages arising from the use of this software.  Users are solely responsible for verifying the correctness of the software's output and for any decisions made based on such output."
+    # Create a frame for the radio buttons
+    frame = ttk.LabelFrame(left_frame, text="Import channels")
+    frame.pack(padx=10, pady=10, fill="x")
 
-    disclaim_text = "\n" + disclaim_text + "Portions of this software are derived from open-source projects, and elements of the source code were generated using artificial intelligence. The author acknowledges the contributions of the open-source community and the advancements in AI technology that have made this software possible."
+        # Create radio buttons
+    radio_digital = ttk.Radiobutton(frame, text="Digital", variable=channel_type_var, value="digital")
+    radio_digital_analog = ttk.Radiobutton(frame, text="Digital & Analog", variable=channel_type_var, value="digital_analog")
 
-    disclaim_text = "\n" + disclaim_text + "\n\nSource code for this applicaion is avaialble at https://github.com/K3JSJ/CS7000\n\n"
-    disclaim_text = disclaim_text + "If you do not accept these terms press the Reject button to exit.\nPressing the Accept button reflects acceptance of the terms of use.\n"
-
-    textbox = tk.Text(root, height=20, width=80)
-    textbox.insert(tk.END, disclaim_text)
-    textbox.pack(pady=10, padx=10)
-    accept_button = tk.Button(root, text="Accept", command=on_accept)
-    accept_button.pack(side=tk.LEFT, padx=20, pady=10)
-
-    reject_button = tk.Button(root, text="Reject", command=on_reject)
-    reject_button.pack(side=tk.RIGHT, padx=20, pady=10)
-
-    root.mainloop()
-    return accepted
+    # Pack radio buttons
+    radio_digital.pack(anchor="w", padx=10, pady=5)
+    radio_digital_analog.pack(anchor="w", padx=10, pady=5)
 
 
-# Display disclaimer for user to accept
-if disclaimer() == False:
-    exit(-1)
+    # Create buttons
+    btn_select_input_dir = ttk.Button(left_frame, text="Select input directory", command=select_input_directory)
+    btn_select_output_dir = ttk.Button(left_frame, text="Select output directory", command=select_output_directory)
 
+    btn_convert_codeplug = ttk.Button(left_frame, text="Convert Codeplug", command=convert_codeplug)
+    btn_exit = ttk.Button(left_frame, text="Exit", command=exit_application)
+
+    # Pack buttons and labels
+    btn_select_input_dir.pack(padx=10, pady=5, fill="x")
+    ttk.Label(left_frame, textvariable=input_directory_var).pack(padx=10, pady=5, fill="x")
+
+    btn_select_output_dir.pack(padx=10, pady=5, fill="x")
+    ttk.Label(left_frame, textvariable=output_directory_var).pack(padx=10, pady=5, fill="x")
+
+    btn_convert_codeplug.pack(padx=10, pady=5, fill="x")
+    btn_exit.pack(padx=10, pady=5, fill="x")
+
+
+    # Create a frame for the debug output
+    debug_frame = ttk.LabelFrame(right_frame, text="Debug Output")
+    debug_frame.pack(side="left", padx=10, pady=10, fill="both", expand=True)
+
+    # Create a label to display the debug output
+    debug_output_label = ttk.Label(debug_frame, textvariable=debug_output_var)
+    debug_output_label.pack(padx=10, pady=10)
+
+
+    # Read CSV and set variables if the file exists
+    try:
+        read_csv_and_set_variables('CS7000_convert_settings.csv')
+    except FileNotFoundError:
+        debug_output('Did not find CS7000_covert_setting.csv.  Please select location of files')
+        pass
+
+    # resize the window
+    root.geometry("1200x500+0+0")
+
+
+def reject_terms():
+    print("Rejected terms of use")
+    root.destroy()
 
 # Create the main application window
+try:
+    pyi_splash.close()
+except:
+    pass
+
 root = tk.Tk()
 root.title("CS7000 Code Plug Utility - By Jason Johnson (K3JSJ) <k3jsj@arrl.net>  Version 1.2")
 
 
-
-# Create left and right frames
-left_frame = ttk.Frame(root)
-right_frame = ttk.Frame(root)
-
-# Pack the frames
-left_frame.pack(side="left", padx=10, pady=10, fill="both", expand=True)
-right_frame.pack(side="right", padx=10, pady=10, fill="both", expand=True)
-
-# Create a frame for the radio buttons
-frame = ttk.LabelFrame(left_frame, text="Import channels")
-frame.pack(padx=10, pady=10, fill="x")
-
-# Create radio button variables
+# Global variables to hold user selections from application window
 channel_type_var = tk.StringVar(value="digital")
-
-# Create radio buttons
-radio_digital = ttk.Radiobutton(frame, text="Digital", variable=channel_type_var, value="digital")
-radio_digital_analog = ttk.Radiobutton(frame, text="Digital & Analog", variable=channel_type_var, value="digital_analog")
-
-# Pack radio buttons
-radio_digital.pack(anchor="w", padx=10, pady=5)
-radio_digital_analog.pack(anchor="w", padx=10, pady=5)
-
-# Create StringVar variables to hold files paths
 input_directory_var = tk.StringVar()
 output_directory_var = tk.StringVar()
-
-
-# Create buttons
-btn_select_input_dir = ttk.Button(left_frame, text="Select input directory", command=select_input_directory)
-btn_select_output_dir = ttk.Button(left_frame, text="Select output directory", command=select_output_directory)
-
-btn_convert_codeplug = ttk.Button(left_frame, text="Convert Codeplug", command=convert_codeplug)
-btn_exit = ttk.Button(left_frame, text="Exit", command=exit_application)
-
-# Pack buttons and labels
-btn_select_input_dir.pack(padx=10, pady=5, fill="x")
-ttk.Label(left_frame, textvariable=input_directory_var).pack(padx=10, pady=5, fill="x")
-
-btn_select_output_dir.pack(padx=10, pady=5, fill="x")
-ttk.Label(left_frame, textvariable=output_directory_var).pack(padx=10, pady=5, fill="x")
-
-btn_convert_codeplug.pack(padx=10, pady=5, fill="x")
-btn_exit.pack(padx=10, pady=5, fill="x")
-
-
-# Create a frame for the debug output
-debug_frame = ttk.LabelFrame(right_frame, text="Debug Output")
-debug_frame.pack(side="left", padx=10, pady=10, fill="both", expand=True)
 
 # Create a StringVar for the debug output
 debug_output_var = tk.StringVar()
 
-# Create a label to display the debug output
-debug_output_label = ttk.Label(debug_frame, textvariable=debug_output_var)
-debug_output_label.pack(padx=10, pady=10)
+disclaim_text = "DISCLAIMER and TERMS OF USE:\nBy using this software, you acknowledge and agree that you do so at your own risk. The author of this software makes no guarantees, representations, or warranties of any kind, express or implied, regarding the accuracy, reliability, or completeness of the software's output. The author shall not be held liable for any errors, omissions, or any losses, injuries, or damages arising from the use of this software.  Users are solely responsible for verifying the correctness of the software's output and for any decisions made based on such output."
 
+disclaim_text = "\n" + disclaim_text + "Portions of this software are derived from open-source projects, and elements of the source code were generated using artificial intelligence. The author acknowledges the contributions of the open-source community and the advancements in AI technology that have made this software possible."
 
-# Read CSV and set variables if the file exists
-try:
-    read_csv_and_set_variables('CS7000_convert_settings.csv')
-except FileNotFoundError:
-    debug_output('Did not find CS7000_covert_setting.csv.  Please select location of files')
-    pass
+disclaim_text = "\n" + disclaim_text + "\n\nSource code for this applicaion is avaialble at https://github.com/K3JSJ/CS7000\n\n"
+disclaim_text = disclaim_text + "If you do not accept these terms press the Reject button to exit.\nPressing the Accept button reflects acceptance of the terms of use.\n"
 
-# resize the window
-root.geometry("1200x500+0+0")
+textbox = tk.Text(root, height=20, width=80)
+textbox.insert(tk.END, disclaim_text)
+textbox.pack(pady=10, padx=10)
+accept_button = tk.Button(root, text="Accept", command=clear_and_rebuild)
+accept_button.pack(side=tk.LEFT, padx=20, pady=10)
 
-
+reject_button = tk.Button(root, text="Reject", command=reject_terms)
+reject_button.pack(side=tk.RIGHT, padx=20, pady=10)
+root.geometry("800x500+0+0")
 
 # Start the main event loop
 root.mainloop()
