@@ -93,7 +93,7 @@ def exit_application():
     input_directory = getDirectoryname(input_directory_var.get())
     output_directory = getDirectoryname(output_directory_var.get())
     channel_type = channel_type_var.get()
-    with open('CS7000_convert_settings.csv', mode='w', newline='') as file:
+    with open(configFolderPath + '/CS7000_convert_settings.csv', mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['Input Directory', 'Output Directory', 'Channel Type'])
         writer.writerow([input_directory, output_directory, channel_type])
@@ -118,6 +118,26 @@ def read_csv_and_set_variables(file_path):
         output_directory_var.set(f"Selected directory: {output_directory}")
         channel_type_var.set(f"{channel_type}")
         debug_output('Read settings from CS7000_convert_setting.csv')
+
+def getConfigFolderPath():
+
+    # Determine if config folder has been created if not.  create it
+    # Get the user's home directory
+    home_dir = os.path.expanduser("~")
+
+    # Define the folder path
+    config_folder_path = os.path.join(home_dir, "CS7000_convert_gui")
+
+    # Check if the folder exists
+    if not os.path.exists(config_folder_path):
+        # Create the folder if it doesn't exist
+        os.makedirs(config_folder_path)
+        print(f"Application profile folder '{config_folder_path}' created successfully!")
+    else:
+        print(f"Found application profile folder '{config_folder_path}'")
+
+    return config_folder_path
+
 
 def clear_and_rebuild():
     root.title("CS7000 Code Plug Utility - By Jason Johnson (K3JSJ) <k3jsj@arrl.net>  Version 1.2")
@@ -176,7 +196,7 @@ def clear_and_rebuild():
 
     # Read CSV and set variables if the file exists
     try:
-        read_csv_and_set_variables('CS7000_convert_settings.csv')
+        read_csv_and_set_variables(configFolderPath + '/CS7000_convert_settings.csv')
     except FileNotFoundError:
         debug_output('Did not find CS7000_covert_setting.csv.  Please select location of files')
         pass
@@ -200,6 +220,8 @@ root.title("CS7000 Code Plug Utility - By Jason Johnson (K3JSJ) <k3jsj@arrl.net>
 
 
 # Global variables to hold user selections from application window
+configFolderPath = getConfigFolderPath()
+
 channel_type_var = tk.StringVar(value="digital")
 input_directory_var = tk.StringVar()
 output_directory_var = tk.StringVar()
