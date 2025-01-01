@@ -3,13 +3,13 @@ import sys
 from hashlib import sha256
 from decimal import Decimal
 import xlsxwriter
+import openpyxl
 
 class Channels:
 
-    def __init__(self, input_file,output_file_dmr, output_file_analog, includeAnalogChannels):
+    def __init__(self, input_file,output_file, includeAnalogChannels):
         self.input_file = input_file
-        self.output_file_dmr = output_file_dmr
-        self.output_file_analog = output_file_analog
+        self.output_file = output_file
 
         self.__fileType = ''
         self.__DetermineFileType()
@@ -23,7 +23,7 @@ class Channels:
         if self.__fileType == "Anytone":
             print("Converting anytone channels file")
             self.ConvertAnytoneChannels()
-            self.LoadChannelNames(self.output_file_dmr, self.output_file_analog)
+            self.LoadChannelNames(self.output_file)
             return (self.__UhfChannels.copy())
 
         if self.__fileType == "CS7000":
@@ -36,19 +36,12 @@ class Channels:
     def ConvertAnytoneChannels(self):
         # Get input and output file names from arguments
         input_file = self.input_file
-        output_file_dmr = self.output_file_dmr 
-        output_file_analog = self.output_file_analog
+        output_file = self.output_file 
 
         # Open the input file for reading
         with open(input_file, mode='r', newline='') as infile:
             reader = csv.reader(infile)
             
-            # Open the output file for writing
-            outfile_dmr = open(output_file_dmr, mode='w', newline='')
-            outfile_analog = open(output_file_analog, mode='w', newline='')
-
-            writer_dmr = csv.writer(outfile_dmr)
-            writer_analog = csv.writer(outfile_analog) 
             outputRowDMR = self.__defaultRow_dmr[:]
             outputRowAnalog = self.__defaultRow_analog[:]
 
@@ -56,14 +49,7 @@ class Channels:
             rowNum_dmr = 1
             rowNum_analog = 1
 
-            # Output header row
-            writer_dmr.writerow(self.__header_dmr)
-            writer_analog.writerow(self.__header_analog)
-
-            # Create worksheets of CS7000 spreadsheet
-            output_spreadsheet = "CS7000_channels.xlsx"
-
-            workbook = xlsxwriter.Workbook(output_spreadsheet)
+            workbook = xlsxwriter.Workbook(output_file)
             analogWorksheet = workbook.add_worksheet("Analog Channels")
             digitalWorksheet = workbook.add_worksheet("Digital Channels")
             easyChannelsWorksheet = workbook.add_worksheet("Easy Trunking Channels")
@@ -186,7 +172,6 @@ class Channels:
                         outputRowAnalog[22] = power
 
                     if (Decimal(rx_freq) >= 400) and ( mode == "DMR"):
-                        writer_dmr.writerow(outputRowDMR)
 
                         col = 0
                         for colVal in outputRowDMR:
@@ -196,7 +181,6 @@ class Channels:
                         rowNum_dmr = rowNum_dmr + 1
 
                     if (Decimal(rx_freq) >= 400) and ( mode == "FM") and self.__includeAnalogChannels:
-                        writer_analog.writerow(outputRowAnalog)
 
                         col = 0
                         for colVal in outputRowAnalog:
@@ -206,8 +190,6 @@ class Channels:
                         rowNum_analog = rowNum_analog + 1
 
         infile.close()
-        outfile_analog.close()
-        outfile_dmr.close()
         workbook.close()
 
     def __DetermineFileType(self):
@@ -239,34 +221,43 @@ class Channels:
 
         infile.close()
 
-    def LoadChannelNames(self, dmr_channels, analog_channels):
+    def LoadChannelNames(self, input_file):
+
+        workbook = openpyxl.load_workbook(input_file)
+
+        analogWorksheet = workbook["Analog Channels"]
+        digitalWorksheet = workbook["Digital Channels"]
+
         inputs = []
-        inputs.append(dmr_channels)
+        inputs.append(digitalWorksheet)
 
         if (self.__includeAnalogChannels):
-            inputs.append(analog_channels)
+            inputs.append(analogWorksheet)
 
         processing_dmr_file = True
-        for input_file in inputs:
-            with open(input_file, mode='r', newline='') as infile:
-                reader = csv.reader(infile)
-                next(reader)
-                for row in reader:
-                    channelName = row[1]
-                    channelSpacing = row[3]
-                    rx_freq = row[11]
-                    rx = Decimal(rx_freq)
+        for input_sheet in inputs:
+            row = 2
+            # cells(row, col) start counting with 1
+            while (input_sheet.cell(row, 1).value != None):
+                channelName = input_sheet.cell(row, 2).value
+                channelSpacing = input_sheet.cell(row, 4).value
+                rx_freq = input_sheet.cell(row, 12).value
 
-                    if processing_dmr_file == True:
-                        tx_freq = row[17]
-                    else:
-                        tx_freq = row[18]
+                rx = Decimal(rx_freq)
 
-                    tx = Decimal(tx_freq)
-                    if ( (rx >= 400) and (rx <= 512)) and ((tx >= 400) and (tx <=512)):
-                        self.__UhfChannels[channelName] = True
-                infile.close()
-                processing_dmr_file = False
+                if processing_dmr_file == True:
+                    tx_freq = input_sheet.cell(row, 18).value
+                else:
+                    tx_freq = input_sheet.cell(row, 19).value
+
+                tx = Decimal(tx_freq)
+                if ( (rx >= 400) and (rx <= 512)) and ((tx >= 400) and (tx <=512)):
+                    self.__UhfChannels[channelName] = True
+                row = row + 1
+
+            processing_dmr_file = False
+
+        workbook.close()
 
     def __SetArrays(self):
 

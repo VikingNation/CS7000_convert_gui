@@ -3,9 +3,9 @@ import sys
 from connectSystems.CS7000.Channels import Channels
 
 # Check for correct number of arguments
-if len(sys.argv) != 4:
-    print("Usage: python AnytoneChannels2_CS7000_Channels.py input_file.csv output_dmr_channels.csv output_analog_channels.csv")
-    print("       Convert Anytone CPS Channels File (CSV format) into column format to add to Connect System Contacts spreadsheet.")
+if len(sys.argv) != 3:
+    print("Usage: python AnytoneChannels2_CS7000_Channels.py input_file.csv output.xlsx")
+    print("       Convert Anytone CPS Channels File (CSV format) into column xlsx format to import into the Connect System channels.")
     print("")
     print("       Credits:  Jason Johnson (k3jsj@arrl.net), https://github.com/K3JSJ/CS7000 ")
     print("")      
@@ -14,9 +14,8 @@ if len(sys.argv) != 4:
 
 
 input_file = sys.argv[1]
-output_file_dmr = sys.argv[2]
-output_file_analog = sys.argv[3]
+output_file = sys.argv[2]
 
-channels = Channels(input_file, output_file_dmr, output_file_analog, True)
+channels = Channels(input_file, output_file, True)
 channels.Convert()
 
