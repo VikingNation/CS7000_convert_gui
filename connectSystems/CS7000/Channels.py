@@ -85,24 +85,31 @@ class Channels:
                     readHeaderRow = 1
                 else:
                     # Extract DMR/analog shared values from input file
+                    # Extract channel name and mode
                     channelName = row[1]
                     mode = row[4]
 
+                    # Anytone { "A-Analog", "D-Digital"}
+                    # CS7000 { "FM", "DMR" }
                     if ( mode == "A-Analog"):
                         mode = "FM"
                     if ( mode == "D-Digital"):
                         mode = "DMR"
 
+                    # Get channel power
                     power = row[5]
 
-                    # CS7000 only supports Low and High power.  Convert power by "rounding down" to lower power
+                    # Anyone { "Turbo", "High", "Mid", "Low" }
+                    # CS7000 { "High", "Low" }
+                    # Convert power by "rounding down" to lower power
                     if ( power == "Turbo"):
                         power = "High"
 
                     if ( power == "Mid"):
                         power = "Low"
 
-
+                    # Anytone { "25K", "12.5K" }
+                    # CS7000 25.0, 12.5
                     channelSpacing = row[6]
 
                     if ( channelSpacing == "25K"):
@@ -110,8 +117,25 @@ class Channels:
                     else:
                         channelSpacing = 12.5
 
+                    # Tx and Rx frequency
                     tx_freq = row[3]
                     rx_freq = row[2]
+
+                    # Anytone : PTT prohibit { Off, On }
+                    # CS7000  : Rx Only { Off, On }
+                    ptt_prohibit = row[24]
+
+                    # DMR Channel allow transmit
+                    # Anytone { Off, ChannelFree, Always }
+                    # CS7000 { Channel Idle, Always}
+                    dmr_tx_permit = row[13]
+
+                    if (dmr_tx_permit == "Off"):
+                        dmr_tx_permit = "Always"
+
+                    if (dmr_tx_permit == "ChannelFree"):
+                        dmr_tx_permit = "Channel Idle"
+
 
 
                     # Extract mode specifci values from input file
@@ -138,8 +162,13 @@ class Channels:
                         else:
                           outputRowDMR[4] = "Slot 2"
 
+                        outputRowDMR[7] = ptt_prohibit
+
                         outputRowDMR[11] = rx_freq
                         outputRowDMR[17] = tx_freq
+
+                        # Tx permit
+                        outputRowDMR[22] = dmr_tx_permit
 
                         if call_alias == "-NULL-":
                             outputRowDMR[19] = "None"
@@ -151,6 +180,7 @@ class Channels:
                         outputRowAnalog[0] = rowNum_analog
                         outputRowAnalog[1] = channelName
                         outputRowAnalog[3] = channelSpacing
+                        outputRowAnalog[7] = ptt_prohibit
                         outputRowAnalog[11] = rx_freq
                         outputRowAnalog[18] = tx_freq
 

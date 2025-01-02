@@ -234,14 +234,18 @@ output_directory_var = tk.StringVar()
 # Create a StringVar for the debug output
 debug_output_var = tk.StringVar()
 
-disclaim_text = "DISCLAIMER and TERMS OF USE:\nBy using this software, you acknowledge and agree that you do so at your own risk. The author of this software makes no guarantees, representations, or warranties of any kind, express or implied, regarding the accuracy, reliability, or completeness of the software's output. The author shall not be held liable for any errors, omissions, or any losses, injuries, or damages arising from the use of this software.  Users are solely responsible for verifying the correctness of the software's output and for any decisions made based on such output."
+disclaim_text = "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA512\n\n"
+
+disclaim_text = disclaim_text + "DISCLAIMER and TERMS OF USE:\nBy using this software, you acknowledge and agree that you do so at your own risk. The author of this software makes no guarantees, representations, or warranties of any kind, express or implied, regarding the accuracy, reliability, or completeness of the software's output. The author shall not be held liable for any errors, omissions, or any losses, injuries, or damages arising from the use of this software.  Users are solely responsible for verifying the correctness of the software's output and for any decisions made based on such output."
 
 disclaim_text = "\n" + disclaim_text + "Portions of this software are derived from open-source projects, and elements of the source code were generated using artificial intelligence. The author acknowledges the contributions of the open-source community and the advancements in AI technology that have made this software possible."
 
 disclaim_text = "\n" + disclaim_text + "\n\nSource code for this applicaion is avaialble at https://github.com/K3JSJ/CS7000\n\n"
 disclaim_text = disclaim_text + "If you do not accept these terms press the Reject button to exit.\nPressing the Accept button reflects acceptance of the terms of use.\n"
 
-textbox = tk.Text(root, height=20, width=80)
+disclaim_text = disclaim_text + "-----BEGIN PGP SIGNATURE-----\n\niHUEARYKAB0WIQR+IRDUkGkAJUU5yYJZwtXH9CXoAgUCZ3YWRwAKCRBZwtXH9CXo\nAqPtAQCTMCq34wP+/ayPmCkegHVGOSNxRDL039m8YP2NX11iqgD+IWt55Afjibwa\nOlElROYvbWZXNsVxJfw9dmazNbz/EAw=\n=zJn2\n-----END PGP SIGNATURE-----\n"
+
+textbox = tk.Text(root, height=32, width=80)
 textbox.insert(tk.END, disclaim_text)
 textbox.pack(pady=10, padx=10)
 accept_button = tk.Button(root, text="Accept", command=clear_and_rebuild)
@@ -249,7 +253,7 @@ accept_button.pack(side=tk.LEFT, padx=20, pady=10)
 
 reject_button = tk.Button(root, text="Reject", command=reject_terms)
 reject_button.pack(side=tk.RIGHT, padx=20, pady=10)
-root.geometry("800x500+0+0")
+root.geometry("800x700+0+0")
 
 raise_above_all(root)
 

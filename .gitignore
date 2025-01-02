@@ -2,3 +2,4 @@ input/
 output/
 connectSystems/CS7000/__pycache__
 *.swp
+*~
