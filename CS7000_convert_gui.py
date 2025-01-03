@@ -240,10 +240,10 @@ disclaim_text = disclaim_text + "DISCLAIMER and TERMS OF USE:\nBy using this sof
 
 disclaim_text = "\n" + disclaim_text + "Portions of this software are derived from open-source projects, and elements of the source code were generated using artificial intelligence. The author acknowledges the contributions of the open-source community and the advancements in AI technology that have made this software possible."
 
-disclaim_text = "\n" + disclaim_text + "\n\nSource code for this applicaion is avaialble at https://github.com/K3JSJ/CS7000\n\n"
+disclaim_text = "\n" + disclaim_text + "\n\nSource code for this applicaion is avaialble at\nhttps://github.com/VikingNation/CS7000_convert_gui\n\n"
 disclaim_text = disclaim_text + "If you do not accept these terms press the Reject button to exit.\nPressing the Accept button reflects acceptance of the terms of use.\n"
 
-disclaim_text = disclaim_text + "-----BEGIN PGP SIGNATURE-----\n\niHUEARYKAB0WIQR+IRDUkGkAJUU5yYJZwtXH9CXoAgUCZ3YWRwAKCRBZwtXH9CXo\nAqPtAQCTMCq34wP+/ayPmCkegHVGOSNxRDL039m8YP2NX11iqgD+IWt55Afjibwa\nOlElROYvbWZXNsVxJfw9dmazNbz/EAw=\n=zJn2\n-----END PGP SIGNATURE-----\n"
+disclaim_text = disclaim_text + "-----BEGIN PGP SIGNATURE-----\n\niHUEARYKAB0WIQR+IRDUkGkAJUU5yYJZwtXH9CXoAgUCZ3g+9AAKCRBZwtXH9CXo\nAiHpAQCY2cQ/T5kN6T2dd1p/E/08SMcZUVSq6BGqsiW4RB4isQD/fOCoRZxwVpLa\nJ95DoRyRMoCQj/vacDUb3vtB/K5Isgg=\n=nm48\n-----END PGP SIGNATURE-----\n"
 
 textbox = tk.Text(root, height=32, width=80)
 textbox.insert(tk.END, disclaim_text)
