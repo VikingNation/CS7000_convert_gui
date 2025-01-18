@@ -2,11 +2,13 @@
 import tkinter as tk
 import csv
 import os
+import sys
 import platform
 from tkinter import ttk, filedialog
 from connectSystems.CS7000.Channels import  Channels
 from connectSystems.CS7000.DigitalContacts import DigitalContacts
 from connectSystems.CS7000.Zones import Zones
+from connectSystems.CS7000.Specs import Specs
 
 # CS7000_convert_gui.py
 #
@@ -92,10 +94,11 @@ def exit_application():
     input_directory = getDirectoryname(input_directory_var.get())
     output_directory = getDirectoryname(output_directory_var.get())
     channel_type = channel_type_var.get()
+
     with open(configFolderPath + '/CS7000_convert_settings.csv', mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['Input Directory', 'Output Directory', 'Channel Type'])
-        writer.writerow([input_directory, output_directory, channel_type])
+        writer.writerow([input_directory, output_directory, channel_type ])
    
     file.close()
     root.destroy()
@@ -142,7 +145,7 @@ def raise_above_all(window):
     window.attributes('-topmost', 0)
 
 def clear_and_rebuild():
-    root.title("CS7000 Code Plug Utility - By Jason Johnson (K3JSJ) <k3jsj@arrl.net>  Version 1.2")
+    root.title("CS7000 Code Plug Utility - By Jason Johnson (K3JSJ) <k3jsj@arrl.net>  Version 1.2.1")
 
     # Destroy all existing widgets
     for widget in root.winfo_children():
@@ -157,31 +160,46 @@ def clear_and_rebuild():
     right_frame.pack(side="right", padx=10, pady=10, fill="both", expand=True)
 
     # Create a frame for the radio buttons
-    frame = ttk.LabelFrame(left_frame, text="Import channels")
+    frame = ttk.LabelFrame(left_frame, text="Select Type of channels to import")
     frame.pack(padx=10, pady=10, fill="x")
 
-        # Create radio buttons
+    # Create radio buttons
     radio_digital = ttk.Radiobutton(frame, text="Digital", variable=channel_type_var, value="digital")
     radio_digital_analog = ttk.Radiobutton(frame, text="Digital & Analog", variable=channel_type_var, value="digital_analog")
 
     # Pack radio buttons
     radio_digital.pack(anchor="w", padx=10, pady=5)
     radio_digital_analog.pack(anchor="w", padx=10, pady=5)
+    
+    # Display dropbox to pick firmware version
+    firmwareFrame = ttk.LabelFrame(left_frame, text="Select firmware version")
+    firmwareFrame.pack(padx=10, pady=10, fill="x")
+    firmwareOptions = specs.getFirmwareVersions()
+    firmwareComboBox = ttk.Combobox(firmwareFrame, values=firmwareOptions)
+    firmwareComboBox.set(firmwareOptions[0])
+    firmwareComboBox.pack(side="left", pady=10)
+    firmwareComboBox.bind("<<ComboboxSelected>>", assignFirmwareVersion)
 
+    # Set directories buttons
+    directoryFrame = ttk.LabelFrame(left_frame, text="Select directories")
+    directoryFrame.pack(padx=10, pady=10, fill="x")
 
-    # Create buttons
-    btn_select_input_dir = ttk.Button(left_frame, text="Select input directory", command=select_input_directory)
-    btn_select_output_dir = ttk.Button(left_frame, text="Select output directory", command=select_output_directory)
+    btn_select_input_dir = ttk.Button(directoryFrame, text="Select input directory", command=select_input_directory)
+    btn_select_output_dir = ttk.Button(directoryFrame, text="Select output directory", command=select_output_directory)
 
-    btn_convert_codeplug = ttk.Button(left_frame, text="Convert Codeplug", command=convert_codeplug)
-    btn_exit = ttk.Button(left_frame, text="Exit", command=exit_application)
+    # Convert codeplug and exit buttons
+    actionFrame = ttk.LabelFrame(left_frame, text="Select action")
+    actionFrame.pack(padx=10, pady=10, fill="x")
+
+    btn_convert_codeplug = ttk.Button(actionFrame, text="Convert Codeplug", command=convert_codeplug)
+    btn_exit = ttk.Button(actionFrame, text="Exit", command=exit_application)
 
     # Pack buttons and labels
     btn_select_input_dir.pack(padx=10, pady=5, fill="x")
-    ttk.Label(left_frame, textvariable=input_directory_var).pack(padx=10, pady=5, fill="x")
+    ttk.Label(directoryFrame, textvariable=input_directory_var).pack(padx=10, pady=5, fill="x")
 
     btn_select_output_dir.pack(padx=10, pady=5, fill="x")
-    ttk.Label(left_frame, textvariable=output_directory_var).pack(padx=10, pady=5, fill="x")
+    ttk.Label(directoryFrame, textvariable=output_directory_var).pack(padx=10, pady=5, fill="x")
 
     btn_convert_codeplug.pack(padx=10, pady=5, fill="x")
     btn_exit.pack(padx=10, pady=5, fill="x")
@@ -193,7 +211,7 @@ def clear_and_rebuild():
 
     # Create a label to display the debug output
     debug_output_label = ttk.Label(debug_frame, textvariable=debug_output_var)
-    debug_output_label.pack(padx=10, pady=10)
+    debug_output_label.pack(side="top", padx=10, pady=10)
 
 
     # Read CSV and set variables if the file exists
@@ -213,6 +231,13 @@ def reject_terms():
     print("Rejected terms of use")
     root.destroy()
 
+def assignFirmwareVersion(event):
+    firmwareVersion_var.set(firmwareComboBox.get())
+    print(firmwareVersion_var.get())
+
+
+#### Start of application
+
 # Create the main application window
 try:
     import pyi_splash
@@ -223,36 +248,46 @@ except:
 root = tk.Tk()
 root.title("CS7000 Code Plug Utility - By Jason Johnson (K3JSJ) <k3jsj@arrl.net>  Version 1.2")
 
+# Read in DISCLAIMER statement
+if getattr(sys, 'frozen', False):
+    base_path = sys._MEIPASS
+else:
+    base_path = os.path.abspath(".")
+
+file_path = os.path.join(base_path, "DISCLAIMER.txt.asc")
+with open(file_path, 'r') as file:
+    disclaim_text = file.read()
+file.close()
 
 # Global variables to hold user selections from application window
 configFolderPath = getConfigFolderPath()
+
+# Get radio specifications
+specs = Specs()
 
 channel_type_var = tk.StringVar(value="digital")
 input_directory_var = tk.StringVar()
 output_directory_var = tk.StringVar()
 
+# Variables for firmware selection
+firmwareComboBox = None
+firmwareVersion_var = tk.StringVar()
+
 # Create a StringVar for the debug output
 debug_output_var = tk.StringVar()
 
-disclaim_text = "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA512\n\n"
+# Widget for disclaimer
+disclaimFrame = ttk.LabelFrame(root)
+disclaimFrame.pack(padx=10, pady=10, fill="x")
 
-disclaim_text = disclaim_text + "DISCLAIMER and TERMS OF USE:\nBy using this software, you acknowledge and agree that you do so at your own risk. The author of this software makes no guarantees, representations, or warranties of any kind, express or implied, regarding the accuracy, reliability, or completeness of the software's output. The author shall not be held liable for any errors, omissions, or any losses, injuries, or damages arising from the use of this software.  Users are solely responsible for verifying the correctness of the software's output and for any decisions made based on such output."
-
-disclaim_text = "\n" + disclaim_text + "Portions of this software are derived from open-source projects, and elements of the source code were generated using artificial intelligence. The author acknowledges the contributions of the open-source community and the advancements in AI technology that have made this software possible."
-
-disclaim_text = "\n" + disclaim_text + "\n\nSource code for this applicaion is avaialble at\nhttps://github.com/VikingNation/CS7000_convert_gui\n\n"
-disclaim_text = disclaim_text + "If you do not accept these terms press the Reject button to exit.\nPressing the Accept button reflects acceptance of the terms of use.\n"
-
-disclaim_text = disclaim_text + "-----BEGIN PGP SIGNATURE-----\n\niHUEARYKAB0WIQR+IRDUkGkAJUU5yYJZwtXH9CXoAgUCZ3g+9AAKCRBZwtXH9CXo\nAiHpAQCY2cQ/T5kN6T2dd1p/E/08SMcZUVSq6BGqsiW4RB4isQD/fOCoRZxwVpLa\nJ95DoRyRMoCQj/vacDUb3vtB/K5Isgg=\n=nm48\n-----END PGP SIGNATURE-----\n"
-
-textbox = tk.Text(root, height=32, width=80)
+textbox = tk.Text(disclaimFrame, height=32, width=80, padx=10, pady=10)
 textbox.insert(tk.END, disclaim_text)
 textbox.pack(pady=10, padx=10)
-accept_button = tk.Button(root, text="Accept", command=clear_and_rebuild)
-accept_button.pack(side=tk.LEFT, padx=20, pady=10)
+accept_button = tk.Button(disclaimFrame, text="Accept", command=clear_and_rebuild)
+accept_button.pack(side=tk.LEFT, padx=10, pady=10)
 
-reject_button = tk.Button(root, text="Reject", command=reject_terms)
-reject_button.pack(side=tk.RIGHT, padx=20, pady=10)
+reject_button = tk.Button(disclaimFrame, text="Reject", command=reject_terms)
+reject_button.pack(side=tk.RIGHT, padx=10, pady=10)
 root.geometry("800x700+0+0")
 
 raise_above_all(root)
