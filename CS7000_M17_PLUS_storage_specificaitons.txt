@@ -1,0 +1,11 @@
+Max channels  CPS Help => Edit - Conventional - Channel - Digital Channel
+- Radios with display can support 2000 channels (digital, analog, mixed)
+- Radios without display can support 64 channels (digital, analog, mixed)
+
+Max channels per zone  CPS Help => Edit - Conventional - Zone
+- Radios with display can support 160 channels / zone
+- Radios without display can support 16 channels / zone
+
+
+Max contact CSP Help => Edit - Conventional - DMR Service - Contact - Contact List
+- Maximum contacts 2000
