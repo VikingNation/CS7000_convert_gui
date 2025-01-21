@@ -48,14 +48,14 @@ class MyApp(tk.Tk):
         self.__configFolderPath = self.__setConfigFolderPath()
 
         # Get radio specifications
-        self.specs = Specs()
+        self.__specs = Specs()
 
         self.__channel_type_var = tk.StringVar(value="digital")
         self.__input_directory_var = tk.StringVar()
         self.__output_directory_var = tk.StringVar()
 
         # Variables for firmware selection
-        self.__firmwareVersion_var = tk.StringVar()
+        self.__firmware_version_var = tk.StringVar()
 
         # Create a StringVar for the debug output
         self.__debug_output_var = tk.StringVar()
@@ -68,7 +68,7 @@ class MyApp(tk.Tk):
 
         # Set geometry of window
         self.geometry("800x700+0+0")
-        raise_above_all(self)
+        self.__raise_above_all()
 
     def getConfigFolderPath(self):
         return self.__configFolderPath
@@ -83,7 +83,7 @@ class MyApp(tk.Tk):
         return self.__channel_type_var.get()
 
     def getFirmware_version(self):
-        return self.__firmwareVersion_var.get()
+        return self.__firmware_version_var.get()
 
     def setInput_directory(self,val):
         self.__input_directory_var.set(val)
@@ -93,6 +93,15 @@ class MyApp(tk.Tk):
 
     def setChannel_type(self,val):
         self.__channel_type_var.set(val)
+
+    def getMaxContacts(self):
+        return self.__specs.getSpecs(self.getFirmware_version() )['maxContacts']
+
+    def getMaxChannels(self):
+        return self.__specs.getSpecs(self.getFirmware_version() )['maxChannels']
+
+    def getMaxZones(self):
+        return self.__specs.getSpecs(self.getFirmware_version() )['maxZones']
 
     def __select_input_directory(self):
         directory = filedialog.askdirectory(title="Chose directory for Anytone input files")
@@ -110,6 +119,14 @@ class MyApp(tk.Tk):
     def debug_output(self,text):
         self.__debug_output_var.set(self.__debug_output_var.get() + '\n' + f'{text}')
 
+    def __debug_DisplaySpecs(self):
+        value1 = self.getMaxContacts()
+        self.debug_output(f'Maximum contacts for radio: {value1}')
+        value2 = self.getMaxChannels()
+        self.debug_output(f'Maximum channels for radio: {value2}')
+        value3 = self.getMaxZones()
+        self.debug_output(f'Maximum zones for radio: {value3}')
+    
     def __setConfigFolderPath(self):
         # Determine if config folder has been created if not.  create it
         # Get the user's home directory
@@ -159,9 +176,10 @@ class MyApp(tk.Tk):
         # Display dropbox to pick firmware version
         firmwareFrame = ttk.LabelFrame(left_frame, text="Select firmware version")
         firmwareFrame.pack(padx=10, pady=10, fill="x")
-        firmwareOptions = self.specs.getFirmwareVersions()
+        firmwareOptions = self.__specs.getFirmwareVersions()
         firmwareComboBox = ttk.Combobox(firmwareFrame, values=firmwareOptions)
         firmwareComboBox.set(firmwareOptions[0])
+        self.__firmware_version_var.set(firmwareOptions[0])
         firmwareComboBox.pack(side="left", pady=10)
         self.__combobox = firmwareComboBox
         firmwareComboBox.bind("<<ComboboxSelected>>", self.__assignFirmwareVersion)
@@ -203,17 +221,25 @@ class MyApp(tk.Tk):
         # Read CSV and set variables if the file exists
         try:
             self.__read_csv_and_set_variables(self.__configFolderPath + '/CS7000_convert_settings.csv')
+
+            # Config file is present.  Set value of combo box to last value used
+            firmwareComboBox.set(self.__firmware_version_var.get() )
+
+
         except FileNotFoundError:
             debug_output('Did not find CS7000_covert_setting.csv.  Please select location of files')
             pass
 
+        #
+        self.__debug_DisplaySpecs()
         # resize the window
         self.geometry("1200x500+0+0")
-        raise_above_all(self)
+        self.__raise_above_all()
 
     def __assignFirmwareVersion(self,event):
-        self.__firmwareVersion_var.set(self.__combobox.get())
-        print("Selected firmware version: " + self.__firmwareVersion_var.get())
+        self.__firmware_version_var.set(self.__combobox.get())
+        self.__debug_DisplaySpecs()
+        print("Selected firmware version: " + self.__firmware_version_var.get())
 
 
     def __read_csv_and_set_variables(self,file_path):
@@ -230,10 +256,15 @@ class MyApp(tk.Tk):
             output_directory = variables.get('Output Directory', '')
             channel_type = variables.get('Channel Type', '')
             firmware_version = variables.get('Firmware Version' , '')
+
+            # Check if firmware_version from config file is blank.  If so set it to default firmware version
+            if ( firmware_version == ''):
+                firmware_version = self.__specs.getFirmwareVersions()[0]
+            
             self.__input_directory_var.set(f"Selected directory: {input_directory}")
             self.__output_directory_var.set(f"Selected directory: {output_directory}")
             self.__channel_type_var.set(f"{channel_type}")
-            self.__firmwareVersion_var.set(f"{firmware_version}")
+            self.__firmware_version_var.set(f"{firmware_version}")
 
             self.debug_output('Read settings from CS7000_convert_setting.csv')
         file.close()
@@ -251,6 +282,11 @@ class MyApp(tk.Tk):
             disclaim_text = file.read()
         file.close()
         return disclaim_text
+
+    def __raise_above_all(window):
+        window.attributes('-topmost', 1)
+        window.attributes('-topmost', 0)
+
 
 def accept_terms():
     print("Accepted terms of user")
@@ -324,14 +360,10 @@ def exit_application():
     with open(app.getConfigFolderPath() + '/CS7000_convert_settings.csv', mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['Input Directory', 'Output Directory', 'Channel Type', 'Firmware Version'])
-        writer.writerow([input_directory, output_directory, channel_type ])
+        writer.writerow([input_directory, output_directory, channel_type, firmware_version])
    
     file.close()
     app.destroy()
-
-def raise_above_all(window):
-    window.attributes('-topmost', 1)
-    window.attributes('-topmost', 0)
 
 #### Start of application
 
