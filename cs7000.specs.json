@@ -1,4 +1,11 @@
 {
+    "0.00.01": {
+        "maxContacts": 20,
+        "maxChannels": 20,
+        "maxChannelsPerZone": 160,
+        "maxZones" : 2
+    },
+
     "9.00.05": {
         "maxContacts": 2000,
         "maxChannels": 2000,

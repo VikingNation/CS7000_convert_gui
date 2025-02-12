@@ -325,9 +325,17 @@ def convert_codeplug():
 
     # Convert contact file
     converted_contacts_file = output_directory + "/CS7000_contacts.xlsx"
-    contacts = DigitalContacts(contacts_file, converted_contacts_file)
+    contacts = DigitalContacts(contacts_file, converted_contacts_file, app.getMaxContacts())
     contacts.Convert()
     app.debug_output("Converted talkgroup file in " + converted_contacts_file)
+
+    # Check if there were talk groups not imported
+    #     output talk groups not imported to notImported.xls
+
+    if (contacts.numNotImported != 0):
+        app.debug_output("WARNING:  Did not import " + str(contacts.numNotImported) + " talkgroups.  Check notImported.xls")
+        contacts.outputTalkGroupsNotImported( output_directory + "/CS7000_notImported.xlsx")
+
 
     # Convert channels file
     if ( app.getChannel_type() == "digital_analog"):
