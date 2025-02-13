@@ -330,11 +330,11 @@ def convert_codeplug():
     app.debug_output("Converted talkgroup file in " + converted_contacts_file)
 
     # Check if there were talk groups not imported
-    #     output talk groups not imported to notImported.xls
+    #     output talk groups not imported to notImported.xlsx
 
     if (contacts.numNotImported != 0):
-        app.debug_output("WARNING:  Did not import " + str(contacts.numNotImported) + " talkgroups.  Check notImported.xls")
-        contacts.outputTalkGroupsNotImported( output_directory + "/CS7000_notImported.xlsx")
+        app.debug_output("WARNING:  Did not import " + str(contacts.numNotImported) + " talkgroups.  Check CS7000_contactsNotImported.xlsx")
+        contacts.outputContactsNotImported( output_directory + "/CS7000_contactsNotImported.xlsx")
 
 
     # Convert channels file
@@ -346,9 +346,16 @@ def convert_codeplug():
     app.debug_output("Including analog channels in conversion is " + str(includeAnalogChannels))
 
     converted_channels_file = output_directory + "/CS7000_channels.xlsx"
-    channels = Channels(channels_file, converted_channels_file, includeAnalogChannels)
+    channels = Channels(channels_file, converted_channels_file, includeAnalogChannels, app.getMaxChannels(), contacts)
     uhfChannels = channels.Convert()
     app.debug_output("Converted channels to " +  converted_channels_file)
+
+    # Check if there were channels not imported
+    #   output channels not imported to notImported.xlsx
+    if (channels.numNotImported != 0):
+        app.debug_output("WARNING: Did not import " + str(channels.numNotImported) + " channels.  Check CS7000_ChannelsNotImported.xlsx")
+        channels.outputChannelsNotImported( output_directory + "/CS7000_ChannelsNotImported.xlsx")
+
 
     # Convert zones file
     converted_zones_file = output_directory + "/CS7000_zones.xlsx"

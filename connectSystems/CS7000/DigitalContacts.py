@@ -24,7 +24,7 @@ class DigitalContacts:
             print("Error!  Input file is not the CSV format expected from Anytone CPS.")
             return (-1)
 
-    def outputTalkGroupsNotImported(self,output_file):
+    def outputContactsNotImported(self,output_file):
         # If there were no talk group not imported exit this method
         if (self.numNotImported == 0):
             return 0
@@ -50,10 +50,13 @@ class DigitalContacts:
         workbook.close()
 
     def checkNotImported(self, talkgroup):
-        if talkgroup in self.__dictNotImported:
+        if self.__dictNotImported == None:
             return False
-        else:
+
+        if talkgroup in self.__dictNotImported:
             return True
+        else:
+            return False
 
     def ConvertAnytoneTalkGroups(self):
         input_file = self.input_file

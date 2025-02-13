@@ -7,9 +7,29 @@ import openpyxl
 
 class Channels:
 
-    def __init__(self, input_file,output_file, includeAnalogChannels):
+    def __init__(self, input_file,output_file, includeAnalogChannels, maxChannels, talkGroups):
         self.input_file = input_file
         self.output_file = output_file
+
+        self.maxChannels = maxChannels
+
+        # Reference to talkGroups needed to check
+        #   talk group on each channel to import
+        #   if talkgroup was not imported then we will not import the channel
+        self.m_talkGroups = talkGroups
+
+        # Track number of DMR/analog imported/not imported
+        # Track total number of channels imported
+        self.numDMRImported = 0
+        self.numDMRNotImported = 0
+        self.numAnalogImported = 0
+        self.numAnalogNotImported = 0
+        self.numNotImported = 0
+        self.numImported = 0
+
+        # Dictionary to hold DMR/analog channels not imported
+        self.__dictDMRNotImported = None
+        self.__dictAnalogNotImported = None
 
         self.__fileType = ''
         self.__DetermineFileType()
@@ -18,6 +38,68 @@ class Channels:
         self.__UhfChannels = {}
         # Setup header and default row records
         self.__SetArrays()
+
+    def checkNotImported(self, channelName):
+        # If DMR/analog not import lists contain no values
+        #   there were no channels filtered out
+        if ( self.__dictDMRNotImported == None) and ( self.__dictAnalogNotImported == None):
+            return False
+
+        # If there are entries in DMR Not Imported see if the channel is present
+        if ( self.__dictDMRNotImported != None):
+            if ( channelName in self.__dictDMRNotImported):
+                return True
+
+        # If there are entires in Analog Not Imported see if the channel is present
+        if ( self.__dictAnalogNotImported != None):
+            if ( channelName in self.__dictAnalogNotImported):
+                return True
+
+        # We checked both the DMR and Analog Not Import list and didn't find the channel
+        #   return False to indicate channel was not present on list of channels filtered out
+        return False
+
+    def outputChannelsNotImported(self,output_file):
+        if (self.numDMRNotImported == 0) and (self.numAnalogNotImported == 0):
+            return 0
+
+        workbook = xlsxwriter.Workbook(output_file)
+        worksheetDMR = workbook.add_worksheet("DMRChannelsNotImported")
+        worksheetAnalog = workbook.add_worksheet("AnalogChannelsNotImported")
+
+        #Write list of DMR channels not imported
+        if (self.numDMRNotImported != 0):
+            # Write DMR header row
+            colNum=0
+            for col in self.__header_dmr[1:]:
+                worksheetDMR.write(0,colNum,col)
+                colNum = colNum + 1
+            rowNum = 1
+            for k in self.__dictDMRNotImported.keys():
+                colNum = 0
+                for col in self.__dictDMRNotImported[k][1:]:
+                    worksheetDMR.write(rowNum,colNum,col)
+                    colNum = colNum + 1
+                worksheetDMR.write(rowNum,1,rowNum)
+                rowNum = rowNum + 1
+
+        #Write list of Analog channels not imported
+        if (self.numAnalogNotImported != 0):
+            # Write Analog header row
+            colNum=0
+            for col in self.__header_analog[1:]:
+                worksheetAnalog.write(0,colNum,col)
+                colNum = colNum + 1
+
+            rowNum = 1
+            for k in self.__dictAnalogNotImported.keys():
+                colNum = 0
+                for col in self.__dictAnalogNotImported[k][1:]:
+                    worksheetAnalog.write(rowNum,colNum,col)
+                    colNum = colNum + 1
+                rowNum = rowNum + 1
+
+        workbook.close()
 
     def Convert(self):
         if self.__fileType == "Anytone":
@@ -138,7 +220,7 @@ class Channels:
 
 
 
-                    # Extract mode specifci values from input file
+                    # Extract mode specific values from input file
                     if ( mode == "DMR"):
                         call_alias = row[9]
                         timeslot = row[21]
@@ -201,23 +283,79 @@ class Channels:
 
                         outputRowAnalog[22] = power
 
+                    # Check for VHF channels and add to not imported list
+                    if (Decimal(rx_freq) < 300) and ( mode == "DMR"):
+                        dmrRow = []
+                        for col in outputRowDMR:
+                            dmrRow.append(col)
+                        if (self.__dictDMRNotImported == None):
+                            self.__dictDMRNotImported = { channelName : dmrRow }
+                        else:
+                            self.__dictDMRNotImported[channelName] = dmrRow
+                        self.numDMRNotImported = self.numDMRNotImported + 1
+                        self.numNotImported = self.numNotImported + 1
+
+                    if (Decimal(rx_freq) < 300) and ( mode == "FM"):
+                        analogRow = []
+                        for col in outputRowAnalog:
+                            analogRow.append(col)
+                        if (self.__dictAnalogNotImported == None):
+                            self.__dictAnalogNotImported = { channelName : analogRow }
+                        else:
+                            self.__dictAnalogNotImported[channelName] = analogRow
+                        self.numAnalogNotImported = self.numAnalogNotImported + 1
+                        self.numNotImported = self.numNotImported + 1
+
+
+                    # Code to output channels to spreadsheet
+                    # Code for DMR channels
                     if (Decimal(rx_freq) >= 400) and ( mode == "DMR"):
+                        if (self.numImported < self.maxChannels) and ( not self.m_talkGroups.checkNotImported(call_alias) ):
+                            col = 0
+                            for colVal in outputRowDMR:
+                                digitalWorksheet.write(rowNum_dmr, col, colVal)
+                                col = col + 1
 
-                        col = 0
-                        for colVal in outputRowDMR:
-                            digitalWorksheet.write(rowNum_dmr, col, colVal)
-                            col = col + 1
+                            rowNum_dmr = rowNum_dmr + 1
+                            self.numDMRImported = self.numDMRImported + 1
+                            self.numImported = self.numImported + 1
+                        else:  # Reached maximum number of channels
+                            dmrRow = []
+                            for col in outputRowDMR:
+                                dmrRow.append(col)
 
-                        rowNum_dmr = rowNum_dmr + 1
+                            if (self.__dictDMRNotImported == None):
+                                self.__dictDMRNotImported = { channelName : dmrRow }
+                            else:
+                                self.__dictDMRNotImported[channelName] = dmrRow
 
+                            self.numDMRNotImported = self.numDMRNotImported + 1
+                            self.numNotImported = self.numNotImported + 1
+
+                    # Code for Analog channels
                     if (Decimal(rx_freq) >= 400) and ( mode == "FM") and self.__includeAnalogChannels:
+                        if (self.numImported < self.maxChannels):
+                            col = 0
+                            for colVal in outputRowAnalog:
+                                analogWorksheet.write(rowNum_analog, col, colVal)
+                                col = col + 1
 
-                        col = 0
-                        for colVal in outputRowAnalog:
-                            analogWorksheet.write(rowNum_analog, col, colVal)
-                            col = col + 1
+                            rowNum_analog = rowNum_analog + 1
+                            self.numAnalogImported = self.numAnalogImported + 1
+                            self.numImported = self.numImported + 1
+                        else:
+                            analogRow = []
+                            for col in outputRowAnalog:
+                                analogRow.append(col)
 
-                        rowNum_analog = rowNum_analog + 1
+                            if (self.__dictAnalogNotImported == None):
+                                self.__dictAnalogNotImported = { channelName : analogRow }
+                            else:
+                                self.__dictAnalogNotImported[channelName] = analogRow 
+
+                            self.numAnalogNotImported = self.numAnalogNotImported + 1
+                            self.numNotImported = self.numNotImported + 1
+
 
         infile.close()
         workbook.close()
