@@ -135,7 +135,7 @@ class Zones:
                     if (rowsRead > 1) and (len(outputRow) < 3):
                         # Zone does not contain any channels
                         #   add it to not import list
-                        print("Filtering out zone " + outputRow[1] + " does not contain any channels. " + str(outputRow[0]))
+                        print("Filtering out zone " + outputRow[1] + " does not contain any channels. ")
                         self.numNotImported = self.numNotImported + 1
                         if (self.__dictZonesNotImported == None):
                             self.__dictZonesNotImported = { outputRow[0] : outputRow[1]}

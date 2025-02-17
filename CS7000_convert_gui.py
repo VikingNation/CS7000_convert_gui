@@ -333,8 +333,8 @@ def convert_codeplug():
     except Exception as e:
         print(f"In convert_codeplug() caught exception caught: {type(e).__name__}")
         if (type(e).__name__ == "FileCreateError"):
-            print(f"ERROR: CS7000_contacts.xlsx is open.  Close file and press convert codeplug")
-            app.debug_output("ERROR: CS7000_contacts.xlsx is open.  Close file and press convert codeplug")
+            print(f"ERROR: CS7000_contacts.xlsx is open. Close file and press convert codeplug")
+            app.debug_output("ERROR: CS7000_contacts.xlsx is open. Close file and press convert codeplug")
         caughtException = True
     # If there was an exception then exit
     if (caughtException == True):
@@ -344,10 +344,18 @@ def convert_codeplug():
 
     # Check if there were talk groups not imported
     #     output talk groups not imported to notImported.xlsx
-    contactNotImportFile = output_directory + "/CS7000_contactsNotImported.xlsx"
+    contactNotImportFile = output_directory + "/CS7000_ContactsNotImported.xlsx"
     if (contacts.numNotImported != 0):
-        app.debug_output("WARNING:  Did not import " + str(contacts.numNotImported) + " talkgroups.  Check CS7000_contactsNotImported.xlsx")
-        contacts.outputContactsNotImported(contactNotImportFile )
+        app.debug_output("WARNING:  Did not import " + str(contacts.numNotImported) + " talkgroups. Check CS7000_ContactsNotImported.xlsx")
+        try:
+            contacts.outputContactsNotImported(contactNotImportFile)
+        except Exception as e:
+            print(f"ERROR: CS7000_ContactsNotImported.xlsx is open. Close file and press convert codeplug")
+            app.debug_output("ERROR: CS7000_ContactsNotImported.xlsx is open. Close file and press convert codeplug")
+            caughtException = True
+        if (caughtException == True):
+            return -1
+
     else:
         # All contacts were imported.  Check if there is an existing contact not imported spreadsheet.  If so delete it
         if (os.path.exists(contactNotImportFile)):
@@ -368,9 +376,9 @@ def convert_codeplug():
     try:
         uhfChannels = channels.Convert()
     except Exception as e:
-        print(f"In convert_codeplug() caught exception caught on convert channels")
-        print(f"ERROR: CS7000_channels.xlsx is open.  Close file and press convert codeplug")
-        app.debug_output("ERROR: CS7000_channels.xlsx is open.  Close file and press convert codeplug")
+        print(f"In convert_codeplug() caught exception in channels.Convert()")
+        print(f"ERROR: CS7000_channels.xlsx is open. Close file and press convert codeplug")
+        app.debug_output("ERROR: CS7000_channels.xlsx is open. Close file and press convert codeplug")
         caughtException = True
 
     if (caughtException == True):
@@ -382,8 +390,17 @@ def convert_codeplug():
     #   output channels not imported to notImported.xlsx
     channelNotImportFile = output_directory + "/CS7000_ChannelsNotImported.xlsx"
     if (channels.numNotImported != 0):
-        app.debug_output("WARNING: Did not import " + str(channels.numNotImported) + " channels.  Check CS7000_ChannelsNotImported.xlsx")
-        channels.outputChannelsNotImported(channelNotImportFile)
+        app.debug_output("WARNING: Did not import " + str(channels.numNotImported) + " channels. Check CS7000_ChannelsNotImported.xlsx")
+        try:
+            channels.outputChannelsNotImported(channelNotImportFile)
+        except Exception as e:
+            print(f"In convert_codeplug() caught exception in channels.outputChannelsNotImported()")
+            print(f"ERROR: CS7000_ChannelsNotImported.xlsx is open. Close file and press convert codeplug")
+            app.debug_output("ERROR: CS7000_ChannelsNotImported.xlx is open. Close file and press convert codeplug")
+            caughtException = True
+        if (caughtException == True):
+            return -1
+
     else:
         # All channels were imported.  Check if there is an existing channels not imported spreadsheet.  If so delete it
         if (os.path.exists(channelNotImportFile)):
@@ -395,9 +412,9 @@ def convert_codeplug():
     try:
         zones.Convert()
     except Exception as e:
-        print(f"In convert_codeplug() caught exception caught on convert zones")
-        print(f"ERROR: CS7000_zones.xlsx is open.  Close file and press convert codeplug")
-        app.debug_output("ERROR: CS7000_zones.xlsx is open.  Close file and press convert codeplug")
+        print(f"In convert_codeplug() caught exception caught zones.Convert()")
+        print(f"ERROR: CS7000_zones.xlsx is open. Close file and press convert codeplug")
+        app.debug_output("ERROR: CS7000_zones.xlsx is open. Close file and press convert codeplug")
         caughtException = True
 
     if (caughtException == True):
@@ -407,8 +424,17 @@ def convert_codeplug():
   
     zoneNotImportFile = output_directory + "/CS7000_ZonesNotImported.xlsx"
     if (zones.numNotImported !=0):
-        app.debug_output("WARNING: Did not import " + str(zones.numNotImported) + " zones.  Check CS7000_ZonesNotImported.xlsx")
-        zones.outputZonesNotImported(zoneNotImportFile)
+        app.debug_output("WARNING: Did not import " + str(zones.numNotImported) + " zones. Check CS7000_ZonesNotImported.xlsx")
+
+        try:
+            zones.outputZonesNotImported(zoneNotImportFile)
+        except Exception as e:
+            print(f"In convert_codeplug() caught exception in zones.OutputZonesNotImported()")
+            print(f"ERROR: CS7000_ZonesNotImported.xlsx is open. Close file and press convert codeplug")
+            app.debug_output("ERROR: CS7000_ZonesNotImported.xlsx is open. Close file and press convert codeplug")
+            caughtException = True
+        if (caughtException == True):
+            return -1
     else:
         # All channels were imported.  Check if there is an existing channels not imported spreadsheet.  If so delete it
         if (os.path.exists(zoneNotImportFile)):
