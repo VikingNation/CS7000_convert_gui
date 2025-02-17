@@ -99,12 +99,14 @@ class Zones:
                 # first two elements of row are row number and zonename
                 if (rowsRead > 1) and (len(outputRow) >= 3):
                     # There are UHF channels.  Output row and increment row number
-                    col = 0
+                    col = 1
                     if (rowNum <= self.__maxZones):
-                        for colVal in outputRow:
+                        worksheet.write(rowNum,0,rowNum)
+                        for colVal in outputRow[1:]:
                             worksheet.write(rowNum, col, colVal)
                             col = col + 1
                         self.numImported = self.numImported + 1
+                        rowNum = rowNum + 1
                     else:
                         self.numNotImported = self.numNotImported + 1
                         print("Filtering out zone " + outputRow[1] + " exceeded maximum zones")
@@ -126,7 +128,6 @@ class Zones:
                         else:
                             self.__dictZonesNotImported[outputRow[0]] = outputRow[1]
                 
-                rowNum = rowNum + 1
                 rowsRead = rowsRead + 1
 
         infile.close()

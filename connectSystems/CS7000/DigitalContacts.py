@@ -7,7 +7,6 @@ class DigitalContacts:
     def __init__(self, input_file, output_file, maxContacts):
         self.input_file = input_file
         self.output_file = output_file
-
         self.maxContacts = maxContacts
         self.numImported = 0
         self.numNotImported = 0
@@ -17,7 +16,12 @@ class DigitalContacts:
 
     def Convert(self):
         if self.__fileType == "Anytone":
-            self.ConvertAnytoneTalkGroups()
+            try:
+                self.ConvertAnytoneTalkGroups()
+            except Exception as e:
+                print(f"In DigitalContacts.Convert() caught an exception {type(e).__name__}")
+                raise e
+
         if self.__fileType == "CS7000":
             print("Input file is all ready is format for the CS7000.  Nothing to convert.")
         if self.__fileType == "ERROR":
@@ -61,8 +65,18 @@ class DigitalContacts:
     def ConvertAnytoneTalkGroups(self):
         input_file = self.input_file
         output_file = self.output_file
+        
+        encounteredException = False
+        try:
+            workbook = xlsxwriter.Workbook(output_file)
+        except Exception as e:
+            encounteredException = True
+            raise e
 
-        workbook = xlsxwriter.Workbook(output_file)
+        if (encounteredException == True):
+            print(f"In DigitalContacts.ConvertAnytoneTalkGroups() encountered exception")
+            return -1
+
         worksheet = workbook.add_worksheet("DMR_Contacts")
 
         # Open the input file for reading

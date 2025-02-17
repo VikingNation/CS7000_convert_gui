@@ -104,7 +104,11 @@ class Channels:
     def Convert(self):
         if self.__fileType == "Anytone":
             print("Converting anytone channels file")
-            self.ConvertAnytoneChannels()
+            try:
+                self.ConvertAnytoneChannels()
+            except Exception as e:
+                print(f"In Channels.Convert() caught and exception {e(type).__name__}")
+                raise e
             self.LoadChannelNames(self.output_file)
             return (self.__UhfChannels.copy())
 
@@ -126,8 +130,24 @@ class Channels:
         input_file = self.input_file
         output_file = self.output_file 
 
+        encounteredException = False
+        try:
+            workbook = xlsxwriter.Workbook(output_file)
+        except Exception as e:
+            encounteredException = True
+            raise e
+        if (encounteredException == True):
+            print(f"In Channels.ConvertAnytoneChannels encountered exception")
+            return ([])
+
+        analogWorksheet = workbook.add_worksheet("Analog Channels")
+        digitalWorksheet = workbook.add_worksheet("Digital Channels")
+        easyChannelsWorksheet = workbook.add_worksheet("Easy Trunking Channels")
+        easyPoolWorksheet = workbook.add_worksheet("Easy Trunking Pool")
+
         # Open the input file for reading
         with open(input_file, mode='r', newline='') as infile:
+
             reader = csv.reader(infile)
             
             outputRowDMR = self.__defaultRow_dmr[:]
@@ -136,13 +156,6 @@ class Channels:
             # set output row number in dmr and analog files
             rowNum_dmr = 1
             rowNum_analog = 1
-
-            workbook = xlsxwriter.Workbook(output_file)
-            analogWorksheet = workbook.add_worksheet("Analog Channels")
-            digitalWorksheet = workbook.add_worksheet("Digital Channels")
-            easyChannelsWorksheet = workbook.add_worksheet("Easy Trunking Channels")
-            easyPoolWorksheet = workbook.add_worksheet("Easy Trunking Pool")
-
 
             col = 0
             for colVal in self.__header_dmr:

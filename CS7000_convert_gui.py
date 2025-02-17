@@ -325,8 +325,21 @@ def convert_codeplug():
 
     # Convert contact file
     converted_contacts_file = output_directory + "/CS7000_contacts.xlsx"
+    caughtException = False
     contacts = DigitalContacts(contacts_file, converted_contacts_file, app.getMaxContacts())
-    contacts.Convert()
+
+    try:
+        contacts.Convert()
+    except Exception as e:
+        print(f"In convert_codeplug() caught exception caught: {type(e).__name__}")
+        if (type(e).__name__ == "FileCreateError"):
+            print(f"ERROR: CS7000_contacts.xlsx is open.  Close file and press convert codeplug")
+            app.debug_output("ERROR: CS7000_contacts.xlsx is open.  Close file and press convert codeplug")
+        caughtException = True
+    # If there was an exception then exit
+    if (caughtException == True):
+        return -1
+
     app.debug_output("Converted talkgroup file in " + converted_contacts_file)
 
     # Check if there were talk groups not imported
@@ -351,7 +364,18 @@ def convert_codeplug():
 
     converted_channels_file = output_directory + "/CS7000_channels.xlsx"
     channels = Channels(channels_file, converted_channels_file, includeAnalogChannels, app.getMaxChannels(), contacts)
-    uhfChannels = channels.Convert()
+
+    try:
+        uhfChannels = channels.Convert()
+    except Exception as e:
+        print(f"In convert_codeplug() caught exception caught on convert channels")
+        print(f"ERROR: CS7000_channels.xlsx is open.  Close file and press convert codeplug")
+        app.debug_output("ERROR: CS7000_channels.xlsx is open.  Close file and press convert codeplug")
+        caughtException = True
+
+    if (caughtException == True):
+        return -1
+
     app.debug_output("Converted channels to " +  converted_channels_file)
 
     # Check if there were channels not imported
