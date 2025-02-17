@@ -54,7 +54,12 @@ class Zones:
 
     def Convert(self):
         if self.__fileType == "Anytone":
-            self.ConvertAnytoneZones()
+            try:
+                self.ConvertAnytoneZones()
+            except Exception as e:
+                print(f"In Zones.py.Convert() caught an exception {type(e).__name__}")
+                print(f"{e}")
+                raise e
 
     def ConvertAnytoneZones(self):
         # Read and parse input file
@@ -62,7 +67,17 @@ class Zones:
         input_file = self.input_file
         output_file = self.output_file
 
-        workbook = xlsxwriter.Workbook(output_file)
+        encounteredException = False
+        try:
+            workbook = xlsxwriter.Workbook(output_file)
+        except Exception as e:
+            encounteredException = True
+            raise e
+
+        if (encounteredException == True):
+            print(f"In Zones.py.ConvertAnytoneZones() encountered exception")
+            return -1
+
         worksheet = workbook.add_worksheet("Zones")
 
         # Open the input file for reading
@@ -85,13 +100,13 @@ class Zones:
                 zoneName = row[1]
                 zoneList = row[2]
                 # Append row number, Zone Name, and List of channels in Zone
-                outputRow.append(rowNum)
+                outputRow.append(rowsRead)
                 outputRow.append(zoneName)
                 parsedZones = zoneList.split("|")
                 for element in parsedZones:
                     # Verify that channel is UHF before we add it to the Zone list
                     if self.__channels.checkNotImported(element):
-                        print("Filtering out channel " + element + " from zone " + outputRow[1])
+                        print("Filtering out channel " + element + " from zone ")
                     else:
                         outputRow.append(element)
 
@@ -115,13 +130,12 @@ class Zones:
                             self.__dictZonesNotImported = { outputRow[0] : outputRow[1]}
                         else:
                             self.__dictZonesNotImported[outputRow[0]] = outputRow[1]
-
                 else:
                     # Check to skip over the header row
-                    if (rowsRead > 1):
+                    if (rowsRead > 1) and (len(outputRow) < 3):
                         # Zone does not contain any channels
                         #   add it to not import list
-                        print("Filtering out zone " + outputRow[1] + " does not contain any channels.")
+                        print("Filtering out zone " + outputRow[1] + " does not contain any channels. " + str(outputRow[0]))
                         self.numNotImported = self.numNotImported + 1
                         if (self.__dictZonesNotImported == None):
                             self.__dictZonesNotImported = { outputRow[0] : outputRow[1]}

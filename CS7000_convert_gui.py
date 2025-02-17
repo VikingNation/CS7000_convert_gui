@@ -392,7 +392,17 @@ def convert_codeplug():
     # Convert zones file
     converted_zones_file = output_directory + "/CS7000_zones.xlsx"
     zones = Zones(zones_file, converted_zones_file, app.getMaxZones(), channels)
-    zones.Convert()
+    try:
+        zones.Convert()
+    except Exception as e:
+        print(f"In convert_codeplug() caught exception caught on convert zones")
+        print(f"ERROR: CS7000_zones.xlsx is open.  Close file and press convert codeplug")
+        app.debug_output("ERROR: CS7000_zones.xlsx is open.  Close file and press convert codeplug")
+        caughtException = True
+
+    if (caughtException == True):
+        return -1
+
     app.debug_output("Converted zones file in " + converted_zones_file)
   
     zoneNotImportFile = output_directory + "/CS7000_ZonesNotImported.xlsx"
