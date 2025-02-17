@@ -331,10 +331,14 @@ def convert_codeplug():
 
     # Check if there were talk groups not imported
     #     output talk groups not imported to notImported.xlsx
-
+    contactNotImportFile = output_directory + "/CS7000_contactsNotImported.xlsx"
     if (contacts.numNotImported != 0):
         app.debug_output("WARNING:  Did not import " + str(contacts.numNotImported) + " talkgroups.  Check CS7000_contactsNotImported.xlsx")
-        contacts.outputContactsNotImported( output_directory + "/CS7000_contactsNotImported.xlsx")
+        contacts.outputContactsNotImported( contactNotImportFile )
+    else:
+        # All contacts were imported.  Check if there is an existing contact not imported spreadsheet.  If so delete it
+        if ( os.path.exists( contactNotImportFile ) ):
+            os.remove( contactNotImportFile )
 
 
     # Convert channels file
@@ -352,9 +356,15 @@ def convert_codeplug():
 
     # Check if there were channels not imported
     #   output channels not imported to notImported.xlsx
+    channelNotImportFile = output_directory + "/CS7000_ChannelsNotImported.xlsx"
     if (channels.numNotImported != 0):
         app.debug_output("WARNING: Did not import " + str(channels.numNotImported) + " channels.  Check CS7000_ChannelsNotImported.xlsx")
-        channels.outputChannelsNotImported( output_directory + "/CS7000_ChannelsNotImported.xlsx")
+        channels.outputChannelsNotImported( channelNotImportFile )
+    else:
+        # All channels were imported.  Check if there is an existing channels not imported spreadsheet.  If so delete it
+        if ( os.path.exists( channelNotImportFile ) ):
+            os.remove( channelNotImportFile )
+
 
 
     # Convert zones file

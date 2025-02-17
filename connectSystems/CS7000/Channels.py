@@ -46,13 +46,13 @@ class Channels:
             return False
 
         # If there are entries in DMR Not Imported see if the channel is present
-        if ( self.__dictDMRNotImported != None):
+        if (self.__dictDMRNotImported != None):
             if ( channelName in self.__dictDMRNotImported):
                 return True
 
         # If there are entires in Analog Not Imported see if the channel is present
-        if ( self.__dictAnalogNotImported != None):
-            if ( channelName in self.__dictAnalogNotImported):
+        if (self.__dictAnalogNotImported != None):
+            if (channelName in self.__dictAnalogNotImported):
                 return True
 
         # We checked both the DMR and Analog Not Import list and didn't find the channel
@@ -114,6 +114,12 @@ class Channels:
             print("Error!  Input file is not the CSV format expected from Anytone CPS.")
             return (-1)
 
+    # Frequency range of CS7000 M17 Plus is 400MHz through 512MHz
+    def inFreqRange(self, freq):
+        if (Decimal(freq) >= 400) and ( Decimal(freq) <= 512):
+            return True
+        else:
+            return False
 
     def ConvertAnytoneChannels(self):
         # Get input and output file names from arguments
@@ -161,7 +167,6 @@ class Channels:
             readHeaderRow = 0
             # Process each row in the input file
             for row in reader:
-
                 # Skip over the header row of the file
                 if readHeaderRow == 0:
                     readHeaderRow = 1
@@ -173,9 +178,9 @@ class Channels:
 
                     # Anytone { "A-Analog", "D-Digital"}
                     # CS7000 { "FM", "DMR" }
-                    if ( mode == "A-Analog"):
+                    if (mode == "A-Analog"):
                         mode = "FM"
-                    if ( mode == "D-Digital"):
+                    if (mode == "D-Digital"):
                         mode = "DMR"
 
                     # Get channel power
@@ -184,17 +189,17 @@ class Channels:
                     # Anyone { "Turbo", "High", "Mid", "Low" }
                     # CS7000 { "High", "Low" }
                     # Convert power by "rounding down" to lower power
-                    if ( power == "Turbo"):
+                    if (power == "Turbo"):
                         power = "High"
 
-                    if ( power == "Mid"):
+                    if (power == "Mid"):
                         power = "Low"
 
                     # Anytone { "25K", "12.5K" }
                     # CS7000 25.0, 12.5
                     channelSpacing = row[6]
 
-                    if ( channelSpacing == "25K"):
+                    if (channelSpacing == "25K"):
                         channelSpacing = 25.0
                     else:
                         channelSpacing = 12.5
@@ -221,7 +226,7 @@ class Channels:
 
 
                     # Extract mode specific values from input file
-                    if ( mode == "DMR"):
+                    if (mode == "DMR"):
                         call_alias = row[9]
                         timeslot = row[21]
                         colorCode = row[20]
@@ -230,7 +235,7 @@ class Channels:
                         ctcss_encode = row[8]
 
 
-                    if ( mode == "DMR"):
+                    if (mode == "DMR"):
                         # Prepare value for output file
                         outputRowDMR[0] = rowNum_dmr
                         outputRowDMR[1] = channelName
@@ -283,8 +288,9 @@ class Channels:
 
                         outputRowAnalog[22] = power
 
-                    # Check for VHF channels and add to not imported list
-                    if (Decimal(rx_freq) < 300) and ( mode == "DMR"):
+                    # Code for DMR channels outside frequency range
+                    if (not self.inFreqRange(rx_freq) or not self.inFreqRange(tx_freq)) and (mode == "DMR"):
+                        # Add the DMR channel outside the frequency range to the dmr not imported list
                         dmrRow = []
                         for col in outputRowDMR:
                             dmrRow.append(col)
@@ -295,7 +301,9 @@ class Channels:
                         self.numDMRNotImported = self.numDMRNotImported + 1
                         self.numNotImported = self.numNotImported + 1
 
-                    if (Decimal(rx_freq) < 300) and ( mode == "FM"):
+                    # Code for analog channels outside frequency range
+                    if (not self.inFreqRange(rx_freq) or not self.inFreqRange(tx_freq)) and (mode == "FM"):
+                        # Add the analog channel outside the frequency range to the analog not imported list
                         analogRow = []
                         for col in outputRowAnalog:
                             analogRow.append(col)
@@ -308,8 +316,8 @@ class Channels:
 
 
                     # Code to output channels to spreadsheet
-                    # Code for DMR channels
-                    if (Decimal(rx_freq) >= 400) and ( mode == "DMR"):
+                    # Code for DMR channels in frequency range
+                    if (self.inFreqRange(rx_freq) and self.inFreqRange(tx_freq)) and (mode == "DMR"):
                         if (self.numImported < self.maxChannels) and ( not self.m_talkGroups.checkNotImported(call_alias) ):
                             col = 0
                             for colVal in outputRowDMR:
@@ -332,18 +340,33 @@ class Channels:
                             self.numDMRNotImported = self.numDMRNotImported + 1
                             self.numNotImported = self.numNotImported + 1
 
-                    # Code for Analog channels
-                    if (Decimal(rx_freq) >= 400) and ( mode == "FM") and self.__includeAnalogChannels:
-                        if (self.numImported < self.maxChannels):
-                            col = 0
-                            for colVal in outputRowAnalog:
-                                analogWorksheet.write(rowNum_analog, col, colVal)
-                                col = col + 1
+                    # Code for Analog channels in frequency range.
+                    if (self.inFreqRange(rx_freq) and self.inFreqRange(tx_freq)) and (mode == "FM"):
+                        # First, check that user wants to include analog channels in codeplug
+                        if (self.__includeAnalogChannels):
+                            if (self.numImported < self.maxChannels):
+                                col = 0
+                                for colVal in outputRowAnalog:
+                                    analogWorksheet.write(rowNum_analog, col, colVal)
+                                    col = col + 1
 
-                            rowNum_analog = rowNum_analog + 1
-                            self.numAnalogImported = self.numAnalogImported + 1
-                            self.numImported = self.numImported + 1
+                                rowNum_analog = rowNum_analog + 1
+                                self.numAnalogImported = self.numAnalogImported + 1
+                                self.numImported = self.numImported + 1
+                            else:
+                                analogRow = []
+                                for col in outputRowAnalog:
+                                    analogRow.append(col)
+
+                                if (self.__dictAnalogNotImported == None):
+                                    self.__dictAnalogNotImported = { channelName : analogRow }
+                                else:
+                                    self.__dictAnalogNotImported[channelName] = analogRow 
+
+                                self.numAnalogNotImported = self.numAnalogNotImported + 1
+                                self.numNotImported = self.numNotImported + 1
                         else:
+                            # User does not want to import analog channels.  Add it to the not imported list
                             analogRow = []
                             for col in outputRowAnalog:
                                 analogRow.append(col)
@@ -410,7 +433,6 @@ class Channels:
                 channelName = input_sheet.cell(row, 2).value
                 channelSpacing = input_sheet.cell(row, 4).value
                 rx_freq = input_sheet.cell(row, 12).value
-
                 rx = Decimal(rx_freq)
 
                 if processing_dmr_file == True:
@@ -419,7 +441,7 @@ class Channels:
                     tx_freq = input_sheet.cell(row, 19).value
 
                 tx = Decimal(tx_freq)
-                if ( (rx >= 400) and (rx <= 512)) and ((tx >= 400) and (tx <=512)):
+                if ( self.inFreqRange(rx) ) and ( self.inFreqRange(tx) ):
                     self.__UhfChannels[channelName] = True
                 row = row + 1
 
