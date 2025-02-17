@@ -5,19 +5,52 @@ import xlsxwriter
 
 class Zones:
 
-    def __init__(self, input_file, output_file, uhfChannels):
+    def __init__(self, input_file, output_file, maxZones, channels):
         self.input_file = input_file
         self.output_file = output_file
 
+        self.__maxZones = maxZones
         self.__fileType = ''
         self.__DetermineFileType()
         self.__setArrays()
-        self.__uhfChannels = uhfChannels.copy()
+        self.__channels = channels
 
-        if len(self.__uhfChannels) == 0:
-            self.__channelFilterProvided = False
+        self.numNotImported = 0
+        self.numImported = 0
+
+        self.__dictZonesNotImported = None
+
+    def checkNotImported(self, zoneName):
+        if (self.__dictNotImported == None):
+            return False
+
+        if (zoneName in self.__dictZonesNotImported):
+            return True
         else:
-            self.__channelFilterProvided = True
+            return False
+    
+    def outputZonesNotImported(self,output_file):
+        if (self.numNotImported == 0):
+            return 0
+
+        # Write list of Zones not imported
+        colNum = 0
+        
+        workbook = xlsxwriter.Workbook(output_file)
+        worksheet = workbook.add_worksheet("ZonesNotImported")
+        
+        colNum=0
+        for col in self.__zoneHeader:
+            worksheet.write(0,colNum,col)
+            colNum = colNum + 1
+        rowNum = 1
+        for k in self.__dictZonesNotImported.keys():
+            zone = self.__dictZonesNotImported[k]
+            worksheet.write(rowNum,0,rowNum)
+            worksheet.write(rowNum,1,zone)
+
+            rowNum = rowNum + 1
+        workbook.close()
 
     def Convert(self):
         if self.__fileType == "Anytone":
@@ -57,11 +90,8 @@ class Zones:
                 parsedZones = zoneList.split("|")
                 for element in parsedZones:
                     # Verify that channel is UHF before we add it to the Zone list
-                    if self.__channelFilterProvided:
-                        if element in self.__uhfChannels:
-                          outputRow.append(element)
-                        else:
-                            print("Filtering out channel ", element)
+                    if self.__channels.checkNotImported(element):
+                        print("Filtering out channel " + element + " from zone " + outputRow[1])
                     else:
                         outputRow.append(element)
 
@@ -70,11 +100,33 @@ class Zones:
                 if (rowsRead > 1) and (len(outputRow) >= 3):
                     # There are UHF channels.  Output row and increment row number
                     col = 0
-                    for colVal in outputRow:
-                        worksheet.write(rowNum, col, colVal)
-                        col = col + 1
-                    rowNum = rowNum + 1
+                    if (rowNum <= self.__maxZones):
+                        for colVal in outputRow:
+                            worksheet.write(rowNum, col, colVal)
+                            col = col + 1
+                        self.numImported = self.numImported + 1
+                    else:
+                        self.numNotImported = self.numNotImported + 1
+                        print("Filtering out zone " + outputRow[1] + " exceeded maximum zones")
 
+                        if (self.__dictZonesNotImported == None):
+                            self.__dictZonesNotImported = { outputRow[0] : outputRow[1]}
+                        else:
+                            self.__dictZonesNotImported[outputRow[0]] = outputRow[1]
+
+                else:
+                    # Check to skip over the header row
+                    if (rowsRead > 1):
+                        # Zone does not contain any channels
+                        #   add it to not import list
+                        print("Filtering out zone " + outputRow[1] + " does not contain any channels.")
+                        self.numNotImported = self.numNotImported + 1
+                        if (self.__dictZonesNotImported == None):
+                            self.__dictZonesNotImported = { outputRow[0] : outputRow[1]}
+                        else:
+                            self.__dictZonesNotImported[outputRow[0]] = outputRow[1]
+                
+                rowNum = rowNum + 1
                 rowsRead = rowsRead + 1
 
         infile.close()

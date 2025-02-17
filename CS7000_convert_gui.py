@@ -95,13 +95,13 @@ class MyApp(tk.Tk):
         self.__channel_type_var.set(val)
 
     def getMaxContacts(self):
-        return self.__specs.getSpecs(self.getFirmware_version() )['maxContacts']
+        return self.__specs.getSpecs(self.getFirmware_version())['maxContacts']
 
     def getMaxChannels(self):
-        return self.__specs.getSpecs(self.getFirmware_version() )['maxChannels']
+        return self.__specs.getSpecs(self.getFirmware_version())['maxChannels']
 
     def getMaxZones(self):
-        return self.__specs.getSpecs(self.getFirmware_version() )['maxZones']
+        return self.__specs.getSpecs(self.getFirmware_version())['maxZones']
 
     def __select_input_directory(self):
         directory = filedialog.askdirectory(title="Chose directory for Anytone input files")
@@ -223,7 +223,7 @@ class MyApp(tk.Tk):
             self.__read_csv_and_set_variables(self.__configFolderPath + '/CS7000_convert_settings.csv')
 
             # Config file is present.  Set value of combo box to last value used
-            firmwareComboBox.set(self.__firmware_version_var.get() )
+            firmwareComboBox.set(self.__firmware_version_var.get())
 
 
         except FileNotFoundError:
@@ -255,10 +255,10 @@ class MyApp(tk.Tk):
             input_directory = variables.get('Input Directory', '')
             output_directory = variables.get('Output Directory', '')
             channel_type = variables.get('Channel Type', '')
-            firmware_version = variables.get('Firmware Version' , '')
+            firmware_version = variables.get('Firmware Version', '')
 
             # Check if firmware_version from config file is blank.  If so set it to default firmware version
-            if ( firmware_version == ''):
+            if (firmware_version == ''):
                 firmware_version = self.__specs.getFirmwareVersions()[0]
             
             self.__input_directory_var.set(f"Selected directory: {input_directory}")
@@ -316,8 +316,8 @@ def getDirectoryname(s):
 def convert_codeplug():
     app.debug_output('Now converting files into format for CS7000')
 
-    input_directory = getDirectoryname(app.getInput_directory() )
-    output_directory = getDirectoryname(app.getOutput_directory() )
+    input_directory = getDirectoryname(app.getInput_directory())
+    output_directory = getDirectoryname(app.getOutput_directory())
 
     contacts_file = input_directory + "/Talkgroups.CSV"
     channels_file = input_directory + "/Channel.CSV"
@@ -334,15 +334,15 @@ def convert_codeplug():
     contactNotImportFile = output_directory + "/CS7000_contactsNotImported.xlsx"
     if (contacts.numNotImported != 0):
         app.debug_output("WARNING:  Did not import " + str(contacts.numNotImported) + " talkgroups.  Check CS7000_contactsNotImported.xlsx")
-        contacts.outputContactsNotImported( contactNotImportFile )
+        contacts.outputContactsNotImported(contactNotImportFile )
     else:
         # All contacts were imported.  Check if there is an existing contact not imported spreadsheet.  If so delete it
-        if ( os.path.exists( contactNotImportFile ) ):
-            os.remove( contactNotImportFile )
+        if (os.path.exists(contactNotImportFile)):
+            os.remove(contactNotImportFile)
 
 
     # Convert channels file
-    if ( app.getChannel_type() == "digital_analog"):
+    if (app.getChannel_type() == "digital_analog"):
         includeAnalogChannels = True
     else:
         includeAnalogChannels = False
@@ -359,26 +359,34 @@ def convert_codeplug():
     channelNotImportFile = output_directory + "/CS7000_ChannelsNotImported.xlsx"
     if (channels.numNotImported != 0):
         app.debug_output("WARNING: Did not import " + str(channels.numNotImported) + " channels.  Check CS7000_ChannelsNotImported.xlsx")
-        channels.outputChannelsNotImported( channelNotImportFile )
+        channels.outputChannelsNotImported(channelNotImportFile)
     else:
         # All channels were imported.  Check if there is an existing channels not imported spreadsheet.  If so delete it
-        if ( os.path.exists( channelNotImportFile ) ):
-            os.remove( channelNotImportFile )
-
-
+        if (os.path.exists(channelNotImportFile)):
+            os.remove(channelNotImportFile)
 
     # Convert zones file
     converted_zones_file = output_directory + "/CS7000_zones.xlsx"
-    zones = Zones(zones_file, converted_zones_file, uhfChannels)
+    zones = Zones(zones_file, converted_zones_file, app.getMaxZones(), channels)
     zones.Convert()
     app.debug_output("Converted zones file in " + converted_zones_file)
-    
+  
+    zoneNotImportFile = output_directory + "/CS7000_ZonesNotImported.xlsx"
+    if (zones.numNotImported !=0):
+        app.debug_output("WARNING: Did not import " + str(zones.numNotImported) + " zones.  Check CS7000_ZonesNotImported.xlsx")
+        zones.outputZonesNotImported(zoneNotImportFile)
+    else:
+        # All channels were imported.  Check if there is an existing channels not imported spreadsheet.  If so delete it
+        if (os.path.exists(zoneNotImportFile)):
+            os.remove(zoneNotImportFile)
+
+    # Open window to show output files
     open_file_explorer(output_directory)
     app.debug_output("Now opening folder containing converted output files")
 
 def exit_application():
-    input_directory = getDirectoryname(app.getInput_directory() )
-    output_directory = getDirectoryname(app.getOutput_directory() )
+    input_directory = getDirectoryname(app.getInput_directory())
+    output_directory = getDirectoryname(app.getOutput_directory())
     channel_type = app.getChannel_type()
     firmware_version = app.getFirmware_version()
 
