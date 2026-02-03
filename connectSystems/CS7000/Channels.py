@@ -238,12 +238,18 @@ class Channels:
                     headerHash = sha256(s.encode('utf-8')).hexdigest()
                     if (headerHash == "0599f2862ac011669d18fb17ecd7077bfa5e0b57584c3f7385fe0231d8b1e033"):
                         self.__fileType = 'Anytone'
+                        self.__fileVersion = '3.4'
                     else:
-                        if (headerHash == "0f5e98e8c8aa9beb2dba3ad016070b300fb65b2c6cb2c5e6c4c8c2df7d1d9d4f"):
-                            self.__fileType = 'CS7000'
+                        # Starting wiht CPS 3.6 TxCC is added to column 55
+                        if (headerHash == "4ef95deeedb33153d648c685a32d65777e64c234c32fc1459aeb821b1c9a82bb"):
+                            self.__fileType = 'Anytone'
+                            self.__fileVersion = '3.6'
                         else:
-                            print("Could not determine type of input file\nHash of file header is ", headerHash)
-                            self.__fileType = 'ERROR'
+                            if (headerHash == "0f5e98e8c8aa9beb2dba3ad016070b300fb65b2c6cb2c5e6c4c8c2df7d1d9d4f"):
+                                self.__fileType = 'CS7000'
+                            else:
+                                print("Could not determine type of input file\nHash of file header is ", headerHash)
+                                self.__fileType = 'ERROR'
 
                 numRows = numRows + 1
 
@@ -292,6 +298,7 @@ class Channels:
     def __SetArrays(self):
 
         # Header row for CS7000
+        # Version 9.00.93 added "Contact Attribute" {Table, Direct} "Contact Type" {Private, Group, All}
         self.__header_dmr = [
             "No.",
             "Channel Alias",
@@ -338,7 +345,9 @@ class Channels:
             "In Call Criteria",
             "Text Message Format",
             "Encryption Ignore RX Clear Voice",
-            "Compressed UDP Data Header"
+            "Compressed UDP Data Header",
+            "Contact Attribute",
+            "Contact Type"
         ]
 
 
@@ -388,7 +397,9 @@ class Channels:
             "Follow Admit Criteria",
             "DMR Standard",
             "Off",
-            "None"
+            "None",
+            "Table",
+            "Private"
         ]
 
 
