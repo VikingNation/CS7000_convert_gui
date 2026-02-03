@@ -9,78 +9,110 @@ class DigitalContacts:
         self.output_file = output_file
 
         self.__fileType = ''
-        self.__DetermineFileType()
+        self.__fileVersion = ''
+        self.rows = []
 
+        self.__DetermineFileType()
+        self.__LoadRows()
+
+
+    # ------------------------------------------------------------
+    # Load all rows into a list so they can be iterated repeatedly
+    # ------------------------------------------------------------
+    def __LoadRows(self):
+        if self.__fileType == "ERROR":
+            return
+
+        with open(self.input_file, mode='r', newline='', encoding="utf-8") as infile:
+            reader = csv.reader(infile)
+            for row in reader:
+                self.rows.append(row)
+
+        self.__rowsInFile = len(self.rows)
+
+
+    # ------------------------------------------------------------
+    # Convert dispatcher
+    # ------------------------------------------------------------
     def Convert(self):
         if self.__fileType == "Anytone":
             self.ConvertAnytoneTalkGroups()
-        if self.__fileType == "CS7000":
-            print("Input file is all ready is format for the CS7000.  Nothing to convert.")
-        if self.__fileType == "ERROR":
-            print("Error!  Input file is not the CSV format expected from Anytone CPS.")
-            return (-1)
+
+        elif self.__fileType == "CS7000":
+            print("Input file is already in format for the CS7000. Nothing to convert.")
+
+        elif self.__fileType == "ERROR":
+            print("Error! Input file is not the CSV format expected from Anytone CPS.")
+            return -1
 
 
-
+    # ------------------------------------------------------------
+    # Convert Anytone → CS7000 using in‑memory rows
+    # ------------------------------------------------------------
     def ConvertAnytoneTalkGroups(self):
-        input_file = self.input_file
-        output_file = self.output_file
-
-        workbook = xlsxwriter.Workbook(output_file)
+        workbook = xlsxwriter.Workbook(self.output_file)
         worksheet = workbook.add_worksheet("DMR_Contacts")
 
+        rowNum = 0
 
-        # Open the input file for reading
-        with open(input_file, mode='r', newline='') as infile:
-            reader = csv.reader(infile)
-            
-            # Process each row in the input file
-            # the first row contains the header row
-            # subsequent rows contain talk groups
-            rowNum = 0
-            for row in reader:
-                number = row[0]
-                radio_id = row[1]
-                call_alias = row[2]
-                call_type = row[3]
-                receive_tone = "No"
-                worksheet.write(rowNum, 0, number)
-                worksheet.write(rowNum, 1, call_alias)
-                worksheet.write(rowNum, 2, call_type)
-                worksheet.write(rowNum, 3, radio_id)
-                worksheet.write(rowNum, 4, receive_tone)
-                rowNum = rowNum + 1
+        for row in self.rows:
+            # Skip header row
+            if rowNum == 0:
+                worksheet.write(rowNum, 0, "No")
+                worksheet.write(rowNum, 1, "Call Alias")
+                worksheet.write(rowNum, 2, "Call Type")
+                worksheet.write(rowNum, 3, "Call ID")
+                worksheet.write(rowNum, 4, "Receive Tone")
+                rowNum += 1
+                continue
 
-        infile.close()
+            number      = row[0]
+            radio_id    = row[1]
+            call_alias  = row[2]
+            call_type   = row[3]
+            receive_tone = "No"
+
+            worksheet.write(rowNum, 0, number)
+            worksheet.write(rowNum, 1, call_alias)
+            worksheet.write(rowNum, 2, call_type)
+            worksheet.write(rowNum, 3, radio_id)
+            worksheet.write(rowNum, 4, receive_tone)
+
+            rowNum += 1
+
         workbook.close()
 
 
+    # ------------------------------------------------------------
+    # Determine file type by hashing header row
+    # ------------------------------------------------------------
     def __DetermineFileType(self):
 
-        with open(self.input_file, mode='r', newline='') as infile:
-         
+        with open(self.input_file, mode='r', newline='', encoding="utf-8") as infile:
             reader = csv.reader(infile)
-            numRows = 0 
-            for row in reader:
-                if numRows == 0:
-                    s = ''
 
-                    for e in enumerate(row):
-                        s = s + e[1]
+            try:
+                header = next(reader)
+            except StopIteration:
+                print("File is empty.")
+                self.__fileType = "ERROR"
+                return
 
-                    headerHash = sha256(s.encode('utf-8')).hexdigest()
-                   
-                    if (headerHash == "3fcf4f8abf1017013669181c3b25ac2662c989e07fd05330250a6348b55baef2"):
-                        self.__fileType = 'Anytone'
-                    else:
-                        if (headerHash == "439f8c974eedd60ad132dc94803757e7a0e6e85093aecdd8ef0e3a26f971ff1d"):
-                            self.__fileType = 'CS7000'
-                        else:
-                            print("Could not determine type of input file\nHash of file header is ", headerHash)
-                            self.__fileType = 'ERROR'
+            s = ''.join(header)
+            headerHash = sha256(s.encode('utf-8')).hexdigest()
 
-                numRows = numRows + 1
+            if headerHash == "3fcf4f8abf1017013669181c3b25ac2662c989e07fd05330250a6348b55baef2":
+                self.__fileType = 'Anytone'
 
-            self.__rowsInFile = numRows
+            elif headerHash == "32bff94368dad7633889e067a0606cb198d269561faf98e48881a298d04cf4b5":
+                self.__fileType = 'CS7000'
+                self.__fileVersion = '9.00.93'
 
-        infile.close()
+            # Previous version of CS7000. Need to confirm version
+            elif headerHash == "439f8c974eedd60ad132dc94803757e7a0e6e85093aecdd8ef0e3a26f971ff1d":
+                self.__fileType = 'CS7000'
+
+            else:
+                print("Could not determine type of input file\nHash of file header is", headerHash)
+                self.__fileType = 'ERROR'
+
