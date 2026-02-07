@@ -2,230 +2,237 @@ import csv
 import sys
 from hashlib import sha256
 from decimal import Decimal
-import xlsxwriter
 import openpyxl
+from openpyxl import Workbook
 
 class Channels:
 
-    def __init__(self, input_file,output_file, includeAnalogChannels):
+    def __init__(self, input_file, output_file, includeAnalogChannels):
         self.input_file = input_file
         self.output_file = output_file
 
-        self.__fileType = ''
-        self.__DetermineFileType()
-
-        self.__includeAnalogChannels = includeAnalogChannels
-        self.__UhfChannels = {}
         # Setup header and default row records
-        self.__SetArrays()
+        self._SetArrays()
+        self._channelRowsAnalog = []
+        self._channelRowsDigital = []
+        self._fileType = ''
+        self._DetermineFileType()
+        self.load(self.input_file)
 
-    def Convert(self):
-        if self.__fileType == "Anytone":
-            print("Converting anytone channels file")
-            self.ConvertAnytoneChannels()
-            self.LoadChannelNames(self.output_file)
-            return (self.__UhfChannels.copy())
+        self._includeAnalogChannels = includeAnalogChannels
+        self._UhfChannels = {}
 
-        if self.__fileType == "CS7000":
-            print("Input file is all ready is format for the CS7000.  Nothing to convert.")
-        if self.__fileType == "ERROR":
-            print("Error!  Input file is not the CSV format expected from Anytone CPS.")
-            return (-1)
-
-
-    def ConvertAnytoneChannels(self):
-        # Get input and output file names from arguments
-        input_file = self.input_file
-        output_file = self.output_file 
-
-        # Open the input file for reading
+    def load(self,input_file):
+        # Open CSV input
         with open(input_file, mode='r', newline='') as infile:
             reader = csv.reader(infile)
-            
-            outputRowDMR = self.__defaultRow_dmr[:]
-            outputRowAnalog = self.__defaultRow_analog[:]
 
-            # set output row number in dmr and analog files
             rowNum_dmr = 1
             rowNum_analog = 1
 
-            workbook = xlsxwriter.Workbook(output_file)
-            analogWorksheet = workbook.add_worksheet("Analog Channels")
-            digitalWorksheet = workbook.add_worksheet("Digital Channels")
-            easyChannelsWorksheet = workbook.add_worksheet("Easy Trunking Channels")
-            easyPoolWorksheet = workbook.add_worksheet("Easy Trunking Pool")
+            print(f"Loading channels from a {self._fileType} formatted CSV")
 
-
-            col = 0
-            for colVal in self.__header_dmr:
-                digitalWorksheet.write(0, col, colVal)
-                col = col + 1
-
-            col = 0
-            for colVal in self.__header_analog:
-                analogWorksheet.write(0, col, colVal)
-                col = col + 1
-
-            col = 0
-            for colVal in self.__header_easyTrunkingChannels:
-                easyChannelsWorksheet.write(0, col, colVal)
-                col = col + 1
-
-            col = 0
-            for colVal in self.__header_easyTrunkingPool:
-                easyPoolWorksheet.write(0, col, colVal)
-                col = col + 1
-
+            # ---------------------------------------------------------
+            # PROCESS CSV ROWS
+            # ---------------------------------------------------------
             readHeaderRow = 0
-            # Process each row in the input file
             for row in reader:
-
-                # Skip over the header row of the file
+                outputRowDMR = self._defaultRow_dmr[:]
+                outputRowAnalog = self._defaultRow_analog[:]
                 if readHeaderRow == 0:
                     readHeaderRow = 1
+                    continue
+
+                # Check if file type is CS7000 analog or digital channels.  If so write the row from the input CSV
+                if (self._fileType == 'CS7000_analog_channels'):
+                    self._channelRowsAnalog.append(row)
                 else:
-                    # Extract DMR/analog shared values from input file
-                    # Extract channel name and mode
-                    channelName = row[1]
-                    mode = row[4]
-
-                    # Anytone { "A-Analog", "D-Digital"}
-                    # CS7000 { "FM", "DMR" }
-                    if ( mode == "A-Analog"):
-                        mode = "FM"
-                    if ( mode == "D-Digital"):
-                        mode = "DMR"
-
-                    # Get channel power
-                    power = row[5]
-
-                    # Anyone { "Turbo", "High", "Mid", "Low" }
-                    # CS7000 { "High", "Low" }
-                    # Convert power by "rounding down" to lower power
-                    if ( power == "Turbo"):
-                        power = "High"
-
-                    if ( power == "Mid"):
-                        power = "Low"
-
-                    # Anytone { "25K", "12.5K" }
-                    # CS7000 25.0, 12.5
-                    channelSpacing = row[6]
-
-                    if ( channelSpacing == "25K"):
-                        channelSpacing = 25.0
+                    if (self._fileType == 'CS7000_digital_channels'):
+                        self._channelRowsDigital.append(row)
                     else:
-                        channelSpacing = 12.5
+                        # Anytone
+                        channelName = row[1]
+                        mode = row[4]
 
-                    # Tx and Rx frequency
-                    tx_freq = row[3]
-                    rx_freq = row[2]
+                        # Normalize mode
+                        if mode == "A-Analog":
+                            mode = "FM"
+                        if mode == "D-Digital":
+                            mode = "DMR"
 
-                    # Anytone : PTT prohibit { Off, On }
-                    # CS7000  : Rx Only { Off, On }
-                    ptt_prohibit = row[24]
+                        power = row[5]
+                        if power == "Turbo":
+                            power = "High"
+                        if power == "Mid":
+                            power = "Low"
 
-                    # DMR Channel allow transmit
-                    # Anytone { Off, ChannelFree, Always }
-                    # CS7000 { Channel Idle, Always}
-                    dmr_tx_permit = row[13]
+                        channelSpacing = row[6]
+                        channelSpacing = 25.0 if channelSpacing == "25K" else 12.5
 
-                    if (dmr_tx_permit == "Off"):
-                        dmr_tx_permit = "Always"
+                        tx_freq = row[3]
+                        rx_freq = row[2]
 
-                    if (dmr_tx_permit == "ChannelFree"):
-                        dmr_tx_permit = "Channel Idle"
+                        ptt_prohibit = row[24]
+                        dmr_tx_permit = row[13]
 
+                        if dmr_tx_permit == "Off":
+                            dmr_tx_permit = "Always"
+                        if dmr_tx_permit == "ChannelFree":
+                            dmr_tx_permit = "Channel Idle"
 
-
-                    # Extract mode specifci values from input file
-                    if ( mode == "DMR"):
-                        call_alias = row[9]
-                        timeslot = row[21]
-                        colorCode = row[20]
-                    else:
-                        ctcss_decode = row[7]
-                        ctcss_encode = row[8]
-
-
-                    if ( mode == "DMR"):
-                        # Prepare value for output file
-                        outputRowDMR[0] = rowNum_dmr
-                        outputRowDMR[1] = channelName
-
-                        # output digital id per channel
-                        outputRowDMR[2] = rowNum_dmr
-                        outputRowDMR[3] = colorCode
-                       
-                        if Decimal(timeslot) == 1:
-                          outputRowDMR[4] = "Slot 1"
+                        if mode == "DMR":
+                            call_alias = row[9]
+                            timeslot = row[21]
+                            colorCode = row[20]
                         else:
-                          outputRowDMR[4] = "Slot 2"
+                            ctcss_decode = row[7]
+                            ctcss_encode = row[8]
 
-                        outputRowDMR[7] = ptt_prohibit
+                        # ---------------------------------------------------------
+                        # BUILD OUTPUT ROWS
+                        # ---------------------------------------------------------
+                        if mode == "DMR":
+                            outputRowDMR[0] = rowNum_dmr
+                            outputRowDMR[1] = channelName
+                            outputRowDMR[2] = rowNum_dmr
+                            outputRowDMR[3] = colorCode
+                            outputRowDMR[4] = "Slot 1" if Decimal(timeslot) == 1 else "Slot 2"
+                            outputRowDMR[7] = ptt_prohibit
+                            outputRowDMR[11] = rx_freq
+                            outputRowDMR[17] = tx_freq
+                            outputRowDMR[22] = dmr_tx_permit
+                            outputRowDMR[19] = "None" if call_alias == "-NULL-" else call_alias
+                            outputRowDMR[21] = power
 
-                        outputRowDMR[11] = rx_freq
-                        outputRowDMR[17] = tx_freq
-
-                        # Tx permit
-                        outputRowDMR[22] = dmr_tx_permit
-
-                        if call_alias == "-NULL-":
-                            outputRowDMR[19] = "None"
                         else:
-                            outputRowDMR[19] = call_alias
+                            outputRowAnalog[0] = rowNum_analog
+                            outputRowAnalog[1] = channelName
+                            outputRowAnalog[3] = channelSpacing
+                            outputRowAnalog[7] = ptt_prohibit
+                            outputRowAnalog[11] = rx_freq
+                            outputRowAnalog[18] = tx_freq
 
-                        outputRowDMR[21] = power
-                    else:
-                        outputRowAnalog[0] = rowNum_analog
-                        outputRowAnalog[1] = channelName
-                        outputRowAnalog[3] = channelSpacing
-                        outputRowAnalog[7] = ptt_prohibit
-                        outputRowAnalog[11] = rx_freq
-                        outputRowAnalog[18] = tx_freq
+                            if ctcss_encode != "Off":
+                                outputRowAnalog[19] = "CTCSS"
+                                outputRowAnalog[20] = ctcss_encode
+                            else:
+                                outputRowAnalog[19] = "NONE"
+                                outputRowAnalog[20] = "NONE"
 
-                        # Check if Transmit CTCSS is used
-                        if ctcss_encode != "Off":
-                            outputRowAnalog[19] = "CTCSS"
-                            outputRowAnalog[20] = ctcss_encode
+                            if ctcss_decode != "Off":
+                                outputRowAnalog[12] = "CTCSS"
+                                outputRowAnalog[13] = ctcss_decode
+                            else:
+                                outputRowAnalog[12] = "NONE"
+                                outputRowAnalog[13] = "NONE"
+
+                            outputRowAnalog[22] = power
+
+                        # Input row has been converted
+                        # Determine channel type and append to list
+                        if ( mode == "DMR"):
+                            self._channelRowsDigital.append(outputRowDMR[:])
+                            rowNum_dmr += 1
                         else:
-                            outputRowAnalog[19] = "NONE"
-                            outputRowAnalog[20] = "NONE"
+                            if ( mode == "FM"):
+                                self._channelRowsAnalog.append(outputRowAnalog[:])
+                                rowNum_analog += 1
+                            else:
+                                print(f"Error! Invalid mode {mode}")
 
-                        if ctcss_decode != "Off":
-                            outputRowAnalog[12] = "CTCSS"
-                            outputRowAnalog[13] = ctcss_decode
-                        else:
-                            outputRowAnalog[12] = "NONE"
-                            outputRowAnalog[13] = "NONE"
+    def Convert(self):
+        if self._fileType in ("Anytone", "CS7000_analog_channels", "CS7000_digital_channels"):
+            print("Writing channels to spreadsheet and returning UHF channel list.")
+            self.writeToSpreadsheet(True)
+            self.LoadChannelNames(self.output_file)
+            return (self._UhfChannels.copy())
+        if self._fileType == "ERROR":
+            print("Error!  Input file is not the CSV format expected from Anytone CPS.")
+            return (-1)
 
-                        outputRowAnalog[22] = power
+    def _find_first_empty_row(self, ws, col=1):
+        row = 2
+        while True:
+            value = ws.cell(row=row, column=col).value
+            if value is None or str(value).strip() == "":
+                return row
+            row += 1
 
-                    if (Decimal(rx_freq) >= 400) and ( mode == "DMR"):
+    def writeToSpreadsheet(self, appendToSpreadsheet=False):
+        output_file = self.output_file
+        # ---------------------------------------------------------
+        # OPEN OR CREATE WORKBOOK
+        # ---------------------------------------------------------
+        if appendToSpreadsheet:
+            workbook = openpyxl.load_workbook(output_file)
+        else:
+            workbook = Workbook()
+            # Remove default sheet
+            default_sheet = workbook.active
+            workbook.remove(default_sheet)
 
-                        col = 0
-                        for colVal in outputRowDMR:
-                            digitalWorksheet.write(rowNum_dmr, col, colVal)
-                            col = col + 1
+            # Create sheets
+            workbook.create_sheet("Analog Channels")
+            workbook.create_sheet("Digital Channels")
+            workbook.create_sheet("Easy Trunking Channels")
+            workbook.create_sheet("Easy Trunking Pool")
 
-                        rowNum_dmr = rowNum_dmr + 1
+        analogWorksheet = workbook["Analog Channels"]
+        digitalWorksheet = workbook["Digital Channels"]
+        easyChannelsWorksheet = workbook["Easy Trunking Channels"]
+        easyPoolWorksheet = workbook["Easy Trunking Pool"]
 
-                    if (Decimal(rx_freq) >= 400) and ( mode == "FM") and self.__includeAnalogChannels:
+        # ---------------------------------------------------------
+        # DETERMINE FIRST EMPTY ROW TO START WRITING CHANNELS
+        # ---------------------------------------------------------
+        if appendToSpreadsheet:
+            rowNum_analog = self._find_first_empty_row(analogWorksheet)
+            rowNum_dmr = self._find_first_empty_row(digitalWorksheet)
+            print(f"Appending to spreadsheet: Analog row {rowNum_analog} DMR row {rowNum_dmr}")
+        else:
+            rowNum_dmr = 2   # openpyxl is 1‑based; row 1 = header
+            rowNum_analog = 2
 
-                        col = 0
-                        for colVal in outputRowAnalog:
-                            analogWorksheet.write(rowNum_analog, col, colVal)
-                            col = col + 1
+        # ---------------------------------------------------------
+        # WRITE HEADERS (only if not appending)
+        # ---------------------------------------------------------
+        if not appendToSpreadsheet:
+            for col, val in enumerate(self._header_dmr, start=1):
+                digitalWorksheet.cell(row=1, column=col, value=val)
 
-                        rowNum_analog = rowNum_analog + 1
+            for col, val in enumerate(self._header_analog, start=1):
+                analogWorksheet.cell(row=1, column=col, value=val)
 
-        infile.close()
-        workbook.close()
+            for col, val in enumerate(self._header_easyTrunkingChannels, start=1):
+                easyChannelsWorksheet.cell(row=1, column=col, value=val)
 
-    def __DetermineFileType(self):
+            for col, val in enumerate(self._header_easyTrunkingPool, start=1):
+                easyPoolWorksheet.cell(row=1, column=col, value=val)
+
+        # ---------------------------------------------------------
+        # WRITE TO SHEETS
+        # ---------------------------------------------------------
+
+        # Loop through DMR channels
+        for outputRowDMR in self._channelRowsDigital:
+            rx_freq = Decimal(str(outputRowDMR[11]).strip())
+            if rx_freq >= 400:
+                for col, val in enumerate(outputRowDMR, start=1):
+                    digitalWorksheet.cell(row=rowNum_dmr, column=col, value=val)
+                rowNum_dmr += 1
+        for outputRowAnalog in self._channelRowsAnalog:
+            rx_freq = Decimal(str(outputRowAnalog[11]).strip())
+            if rx_freq >= 400 and self._includeAnalogChannels:
+                for col, val in enumerate(outputRowAnalog, start=1):
+                    analogWorksheet.cell(row=rowNum_analog, column=col, value=val)
+                rowNum_analog += 1
+
+        # Save workbook
+        workbook.save(output_file)
+
+    def _DetermineFileType(self):
 
         with open(self.input_file, mode='r', newline='') as infile:
-         
             reader = csv.reader(infile)
             numRows = 0 
             for row in reader:
@@ -237,23 +244,31 @@ class Channels:
 
                     headerHash = sha256(s.encode('utf-8')).hexdigest()
                     if (headerHash == "0599f2862ac011669d18fb17ecd7077bfa5e0b57584c3f7385fe0231d8b1e033"):
-                        self.__fileType = 'Anytone'
-                        self.__fileVersion = '3.4'
+                        self._fileType = 'Anytone'
+                        self._fileVersion = '3.4'
                     else:
                         # Starting wiht CPS 3.6 TxCC is added to column 55
                         if (headerHash == "4ef95deeedb33153d648c685a32d65777e64c234c32fc1459aeb821b1c9a82bb"):
-                            self.__fileType = 'Anytone'
-                            self.__fileVersion = '3.6'
+                            self._fileType = 'Anytone'
+                            self._fileVersion = '3.6'
                         else:
-                            if (headerHash == "0f5e98e8c8aa9beb2dba3ad016070b300fb65b2c6cb2c5e6c4c8c2df7d1d9d4f"):
-                                self.__fileType = 'CS7000'
+                            if (headerHash == "17a160a6bdc7c1bf759b4f61957d7753cc2373959b99d8b47087bbd9c44c0585"):
+                                self._fileType = 'CS7000_analog_channels'
+                                self._fileVersion = '9.00.93'
                             else:
-                                print("Could not determine type of input file\nHash of file header is ", headerHash)
-                                self.__fileType = 'ERROR'
+                                if (headerHash == "68d829b43954be5483c42f92905d93fb6b8c7c47b28ef94bb51c7dd6a816f8d2"):
+                                    self._fileType = 'CS7000_digital_channels'
+                                    self._fileVersion = '9.00.93'
+                                else:
+                                    if (headerHash == "0f5e98e8c8aa9beb2dba3ad016070b300fb65b2c6cb2c5e6c4c8c2df7d1d9d4f"):
+                                        self._fileType = 'CS7000'
+                                    else:
+                                        print("Could not determine type of input file\nHash of file header is ", headerHash)
+                                        self._fileType = 'ERROR'
 
                 numRows = numRows + 1
 
-            self.__rowsInFile = numRows
+            self._rowsInFile = numRows
 
         infile.close()
 
@@ -267,7 +282,7 @@ class Channels:
         inputs = []
         inputs.append(digitalWorksheet)
 
-        if (self.__includeAnalogChannels):
+        if (self._includeAnalogChannels):
             inputs.append(analogWorksheet)
 
         processing_dmr_file = True
@@ -286,20 +301,22 @@ class Channels:
                 else:
                     tx_freq = input_sheet.cell(row, 19).value
 
+                print(f"Debug tx is {tx_freq}")
+
                 tx = Decimal(tx_freq)
                 if ( (rx >= 400) and (rx <= 512)) and ((tx >= 400) and (tx <=512)):
-                    self.__UhfChannels[channelName] = True
+                    self._UhfChannels[channelName] = True
                 row = row + 1
 
             processing_dmr_file = False
 
         workbook.close()
 
-    def __SetArrays(self):
+    def _SetArrays(self):
 
         # Header row for CS7000
         # Version 9.00.93 added "Contact Attribute" {Table, Direct} "Contact Type" {Private, Group, All}
-        self.__header_dmr = [
+        self._header_dmr = [
             "No.",
             "Channel Alias",
             "Digital ID [Per Each Channel]",
@@ -351,7 +368,7 @@ class Channels:
         ]
 
 
-        self.__defaultRow_dmr = [
+        self._defaultRow_dmr = [
             "1",
             "DMR Smplx 441",
             "4",
@@ -404,7 +421,7 @@ class Channels:
 
 
 
-        self.__defaultRow_analog = [
+        self._defaultRow_analog = [
             "1",
             "Channel 4",
             "Normal",
@@ -441,7 +458,7 @@ class Channels:
         ]
 
 
-        self.__header_analog = [
+        self._header_analog = [
             "No.",
             "Channel Alias",
             "Carrier Squelch Level",
@@ -477,7 +494,7 @@ class Channels:
             "Auto Start Voting"
         ]
 
-        self.__header_easyTrunkingChannels = [
+        self._header_easyTrunkingChannels = [
             "No.",
             "Channel Alias",
             "Digital ID [Per Each Channel]",
@@ -520,7 +537,7 @@ class Channels:
             "Encryption Ignore RX Clear Voice"
         ]
 
-        self.__header_easyTrunkingPool = [
+        self._header_easyTrunkingPool = [
             "No",
             "Channel Alias",
             "Color Code",
