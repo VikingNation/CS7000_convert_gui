@@ -1,6 +1,21 @@
 #!/bin/env python
+import os
 import sys
 from connectSystems.CS7000.Channels import Channels
+
+
+def delete_if_exists(filename):
+        if os.path.exists(filename):
+            try:
+                os.remove(filename)
+                print(f"Deleted existing file: {filename}")
+            except PermissionError:
+                print(f"Cannot delete '{filename}' — the file is open or locked.")
+            except Exception as e:
+                print(f"Unexpected error deleting '{filename}': {e}")
+        else:
+            print(f"No existing file to delete: {filename}")
+
 
 # ---------------------------------------------------------
 # PARSE ARGUMENTS
@@ -39,17 +54,11 @@ if len(args) != 2:
     print("Usage: python AnytoneChannels2_CS7000_Channels.py [options] input_file.csv output.xlsx")
     sys.exit(1)
 
-print(f"Args is {args}")
 input_file = args[0]
 output_file = args[1]
 
 if include_default:
-    print("Including default channels (stub logic here)")
-    # ---------------------------------------------------------
-    # TODO: Add your logic here to include default channels
-    # Example:
-    # channels.addDefaultChannels()
-    # ---------------------------------------------------------
+    delete_if_exists(output_file)
     channels = Channels(stock_analog_channel_file, output_file, True)
     channels.load(stock_digital_channel_file)
     channels.load(input_file)

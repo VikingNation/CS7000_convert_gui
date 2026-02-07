@@ -1,10 +1,10 @@
+import os
 import csv
 import sys
-from hashlib import sha256
-from decimal import Decimal
 import openpyxl
 from openpyxl import Workbook
-
+from hashlib import sha256
+from decimal import Decimal
 class Channels:
 
     def __init__(self, input_file, output_file, includeAnalogChannels):
@@ -16,13 +16,21 @@ class Channels:
         self._channelRowsAnalog = []
         self._channelRowsDigital = []
         self._fileType = ''
-        self._DetermineFileType()
+        self._fileVersion = ''
         self.load(self.input_file)
 
         self._includeAnalogChannels = includeAnalogChannels
         self._UhfChannels = {}
 
+        # Track rows we have written to worksheet
+        self._analogRowsWritten = 0
+        self._digitalRowsWritten = 0
+
+
     def load(self,input_file):
+        self.input_file = input_file
+        self._DetermineFileType()
+
         # Open CSV input
         with open(input_file, mode='r', newline='') as infile:
             reader = csv.reader(infile)
@@ -154,18 +162,24 @@ class Channels:
         row = 2
         while True:
             value = ws.cell(row=row, column=col).value
+            print(f"_find_first_empty_row: Row {row} Value {value}")
             if value is None or str(value).strip() == "":
                 return row
             row += 1
 
     def writeToSpreadsheet(self, appendToSpreadsheet=False):
         output_file = self.output_file
+        writeHeaderRows = False
         # ---------------------------------------------------------
         # OPEN OR CREATE WORKBOOK
         # ---------------------------------------------------------
-        if appendToSpreadsheet:
+        if appendToSpreadsheet and os.path.exists(output_file):
+            # File exists → append to it:
+            writeHeaderRows = False
             workbook = openpyxl.load_workbook(output_file)
         else:
+            # File does NOT exist OR appendToSpreadsheet=False → create new workbook
+            writeHeaderRows = True
             workbook = Workbook()
             # Remove default sheet
             default_sheet = workbook.active
@@ -185,18 +199,18 @@ class Channels:
         # ---------------------------------------------------------
         # DETERMINE FIRST EMPTY ROW TO START WRITING CHANNELS
         # ---------------------------------------------------------
-        if appendToSpreadsheet:
+        if (self._analogRowsWritten == 0 or self._digitalRowsWritten == 0):
+            rowNum_dmr = 2   # openpyxl is 1‑based; row 1 = header
+            rowNum_analog = 2
+        else:
             rowNum_analog = self._find_first_empty_row(analogWorksheet)
             rowNum_dmr = self._find_first_empty_row(digitalWorksheet)
             print(f"Appending to spreadsheet: Analog row {rowNum_analog} DMR row {rowNum_dmr}")
-        else:
-            rowNum_dmr = 2   # openpyxl is 1‑based; row 1 = header
-            rowNum_analog = 2
 
         # ---------------------------------------------------------
         # WRITE HEADERS (only if not appending)
         # ---------------------------------------------------------
-        if not appendToSpreadsheet:
+        if not appendToSpreadsheet or writeHeaderRows:
             for col, val in enumerate(self._header_dmr, start=1):
                 digitalWorksheet.cell(row=1, column=col, value=val)
 
@@ -300,8 +314,6 @@ class Channels:
                     tx_freq = input_sheet.cell(row, 18).value
                 else:
                     tx_freq = input_sheet.cell(row, 19).value
-
-                print(f"Debug tx is {tx_freq}")
 
                 tx = Decimal(tx_freq)
                 if ( (rx >= 400) and (rx <= 512)) and ((tx >= 400) and (tx <=512)):
