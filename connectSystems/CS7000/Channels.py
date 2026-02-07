@@ -34,9 +34,9 @@ class Channels:
         # Open CSV input
         with open(input_file, mode='r', newline='') as infile:
             reader = csv.reader(infile)
-
-            rowNum_dmr = 1
-            rowNum_analog = 1
+            # Get row number of number of elements in the channelRowsAnalog and channelRowsDigital
+            rowNum_dmr = len(self._channelRowsDigital)
+            rowNum_analog = len(self._channelRowsAnalog)
 
             print(f"Loading channels from a {self._fileType} formatted CSV")
 
@@ -233,12 +233,18 @@ class Channels:
             if rx_freq >= 400:
                 for col, val in enumerate(outputRowDMR, start=1):
                     digitalWorksheet.cell(row=rowNum_dmr, column=col, value=val)
+                # We must update column A "No." and C "Digital ID [Per Each Channel]"
+                # Note the value is one less than the row number
+                digitalWorksheet.cell(row=rowNum_dmr, column=1, value=rowNum_dmr-1)
+                digitalWorksheet.cell(row=rowNum_dmr, column=3, value=rowNum_dmr-1)
                 rowNum_dmr += 1
         for outputRowAnalog in self._channelRowsAnalog:
             rx_freq = Decimal(str(outputRowAnalog[11]).strip())
             if rx_freq >= 400 and self._includeAnalogChannels:
                 for col, val in enumerate(outputRowAnalog, start=1):
                     analogWorksheet.cell(row=rowNum_analog, column=col, value=val)
+                # We must update column A "No."
+                analogWorksheet.cell(row=rowNum_analog, column=1, value=rowNum_analog-1)
                 rowNum_analog += 1
 
         # Save workbook
