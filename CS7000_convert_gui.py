@@ -16,6 +16,8 @@ from connectSystems.CS7000.Zones import Zones
 #           Program outputs spreadsheets in format for CS7000
 #
 #           Portions of this source code were generated using Microsoft Co-Pilot
+#           This version of the applicatation has been updated for
+#           CPS verseion 1.2.19.00 Beta and CS7000 Firmware version 9.00.93
 
 def select_input_directory():
     directory = filedialog.askdirectory(title="Chose directory for Anytone input files")
@@ -75,16 +77,27 @@ def convert_codeplug():
     debug_output("Including analog channels in conversion is " + str(includeAnalogChannels))
 
     converted_channels_file = output_directory + "/CS7000_channels.xlsx"
-    channels = Channels(channels_file, converted_channels_file, includeAnalogChannels)
+
+    if ( default_zones_channels_var.get() == "include" ):
+        channels = Channels(stock_analog_channel_file, converted_channels_file, includeAnalogChannels)
+        channels.load(stock_digital_channel_file)
+        channels.load(channels_file)
+    else:
+        channels = Channels(channels_file, converted_channels_file, includeAnalogChannels)
+
     uhfChannels = channels.Convert()
     debug_output("Converted channels to " +  converted_channels_file)
 
     # Convert zones file
     converted_zones_file = output_directory + "/CS7000_zones.xlsx"
-    zones = Zones(zones_file, converted_zones_file, uhfChannels)
+    if ( default_zones_channels_var.get() == "include" ):
+        zones = Zones(stock_zones_file, converted_zones_file, uhfChannels)
+        zones.load(zones_file)
+    else:
+        zones = Zones(zones_file, converted_zones_file, uhfChannels)
     zones.Convert()
     debug_output("Converted zones file in " + converted_zones_file)
-    
+
     open_file_explorer(output_directory)
     debug_output("Now opening folder containing converted output files")
 
@@ -92,10 +105,11 @@ def exit_application():
     input_directory = getDirectoryname(input_directory_var.get())
     output_directory = getDirectoryname(output_directory_var.get())
     channel_type = channel_type_var.get()
+    default_settings = default_zones_channels_var.get()
     with open(configFolderPath + '/CS7000_convert_settings.csv', mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(['Input Directory', 'Output Directory', 'Channel Type'])
-        writer.writerow([input_directory, output_directory, channel_type])
+        writer.writerow(['Input Directory', 'Output Directory', 'Channel Type', 'Default Settings'])
+        writer.writerow([input_directory, output_directory, channel_type, default_settings])
    
     file.close()
     root.destroy()
@@ -113,9 +127,11 @@ def read_csv_and_set_variables(file_path):
         input_directory = variables.get('Input Directory', '')
         output_directory = variables.get('Output Directory', '')
         channel_type = variables.get('Channel Type', '')
+        default_settings = variables.get('Default Settings', 'include')
         input_directory_var.set(f"Selected directory: {input_directory}")
         output_directory_var.set(f"Selected directory: {output_directory}")
         channel_type_var.set(f"{channel_type}")
+        default_zones_channels_var.set(f"{default_settings}")
         debug_output('Read settings from CS7000_convert_setting.csv')
 
 def getConfigFolderPath():
@@ -142,7 +158,7 @@ def raise_above_all(window):
     window.attributes('-topmost', 0)
 
 def clear_and_rebuild():
-    root.title("CS7000 Code Plug Utility - By Jason Johnson (K3JSJ) <k3jsj@arrl.net>  Version 1.2")
+    root.title("CS7000 Code Plug Utility - By Jason Johnson (K3JSJ) <k3jsj@arrl.net>  Version 1.3")
 
     # Destroy all existing widgets
     for widget in root.winfo_children():
@@ -160,7 +176,7 @@ def clear_and_rebuild():
     frame = ttk.LabelFrame(left_frame, text="Import channels")
     frame.pack(padx=10, pady=10, fill="x")
 
-        # Create radio buttons
+    # Create radio buttons
     radio_digital = ttk.Radiobutton(frame, text="Digital", variable=channel_type_var, value="digital")
     radio_digital_analog = ttk.Radiobutton(frame, text="Digital & Analog", variable=channel_type_var, value="digital_analog")
 
@@ -168,6 +184,14 @@ def clear_and_rebuild():
     radio_digital.pack(anchor="w", padx=10, pady=5)
     radio_digital_analog.pack(anchor="w", padx=10, pady=5)
 
+    # Create frame for Default Zones/Channels
+    frame_default = ttk.LabelFrame(left_frame, text="Default Zones & Channels")
+    frame_default.pack(padx=10, pady=10, fill="x")
+    # Create radio button for including firmware Zones & Channels
+    radio_include_default = ttk.Radiobutton(frame_default, text="Include", variable=default_zones_channels_var, value="include")
+    radio_exclude_default = ttk.Radiobutton(frame_default, text="Exclude", variable=default_zones_channels_var, value="exclude")
+    radio_include_default.pack(anchor="w", padx=10, pady=5)
+    radio_exclude_default.pack(anchor="w", padx=10, pady=10)
 
     # Create buttons
     btn_select_input_dir = ttk.Button(left_frame, text="Select input directory", command=select_input_directory)
@@ -221,10 +245,18 @@ except:
     pass
 
 root = tk.Tk()
-root.title("CS7000 Code Plug Utility - By Jason Johnson (K3JSJ) <k3jsj@arrl.net>  Version 1.2")
+root.title("CS7000 Code Plug Utility - By Jason Johnson (K3JSJ) <k3jsj@arrl.net>  Version 1.3")
 
 
 # Global variables to hold user selections from application window
+
+# Location of stock Zones and Analog and Digital Channels CSV files that come pre-loaded with
+# CS7000 
+stock_zones_file = "codeplugs\\CS7000_M17_PLUS_V9.00.93_zones.csv"
+stock_analog_channel_file = "codeplugs\\CS7000_M17_PLUS_V9.00.93_analog_channels.csv"
+stock_digital_channel_file = "codeplugs\\CS7000_M17_PLUS_V9.00.93_digital_channels.csv"
+
+
 configFolderPath = getConfigFolderPath()
 
 channel_type_var = tk.StringVar(value="digital")
@@ -233,6 +265,9 @@ output_directory_var = tk.StringVar()
 
 # Create a StringVar for the debug output
 debug_output_var = tk.StringVar()
+
+# Variable to hold if user wants to include stock Zones & channels that come preloaded with firmware
+default_zones_channels_var = tk.StringVar()
 
 disclaim_text = "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA512\n\n"
 
