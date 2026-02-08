@@ -34,7 +34,7 @@ if len(args) < 2:
     print("Usage: python AnytoneChannels2_CS7000_Channels.py [options] input_file.csv output.xlsx")
     print("")
     print("Options:")
-    print("   -i, --include-default    Include default channels in output")
+    print("   -i, --include-default    Include default channels from the firmware in output")
     print("")
     print("Convert Anytone CPS Channels File (CSV format) into column xlsx format")
     print("to import into the Connect Systems CS7000 channels.")
