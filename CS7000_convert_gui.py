@@ -58,7 +58,7 @@ def convert_codeplug():
     input_directory = getDirectoryname(input_directory_var.get())
     output_directory = getDirectoryname(output_directory_var.get())
 
-    contacts_file = input_directory + "/Talkgroups.CSV"
+    contacts_file = input_directory + "/TalkGroups.CSV"
     channels_file = input_directory + "/Channel.CSV"
     zones_file = input_directory + "/Zone.CSV"
 
