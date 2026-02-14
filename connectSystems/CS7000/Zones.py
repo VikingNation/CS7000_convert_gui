@@ -25,6 +25,9 @@ class Zones:
 
         self.load(input_file)
 
+    def getNumberZones(self):
+        return len(self._zonesDict)
+
     def load(self, input_file):
         self.input_file = input_file
         self._DetermineFileType()

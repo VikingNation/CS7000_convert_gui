@@ -71,8 +71,10 @@ def convert_codeplug():
     numberContacts = contacts.getNumberContacts()
     if (numberContacts <= Const.MAXCONTACTS):
         contacts.Convert()
+        errorMakingContacts = False
         debug_output(f"Converted talkgroup file in {converted_contacts_file}")
     else:
+        errorMakingContacts = True
         debug_output(f"Cannot convert talkgroups file. You have {numberContacts} talkgroups which exceeds the maximum allowed size of {Const.MAXCONTACTS}")
 
 
@@ -97,8 +99,10 @@ def convert_codeplug():
     numberChannels= channels.getNumberChannels()
     if (numberContacts <= Const.MAXCHANNELS):
         uhfChannels = channels.Convert()
+        errorMakingChannels = False
         debug_output(f"Converted channels to {converted_channels_file}")
     else:
+        errorMakingChannels = True
         debug_output(f"Cannot convert chanels file. You have {numberChannels} channels which exceeds the maximum allowed size of {Const.MAXCHANNELS}")
 
     # Convert zones file
@@ -108,8 +112,17 @@ def convert_codeplug():
         zones.load(zones_file)
     else:
         zones = Zones(zones_file, converted_zones_file, uhfChannels)
-    zones.Convert()
-    debug_output("Converted zones file in " + converted_zones_file)
+
+    # Check size of zones file
+    numberZones = zones.getNumberZones()
+    if (numberZones <= Const.MAXZONES):
+        zones.Convert()
+        errorMakingZones = False
+        debug_output("Converted zones file in " + converted_zones_file)
+    else:
+        errorMakingZones = True
+        debug_output("Cannot convert zones files. You have {numberZones} zones which exceeds the maximum allowed size of {Const.MAXZONES}")
+
 
     open_file_explorer(output_directory)
     debug_output("Now opening folder containing converted output files")
@@ -145,7 +158,6 @@ def read_csv_and_set_variables(file_path):
         output_directory_var.set(f"Selected directory: {output_directory}")
         channel_type_var.set(f"{channel_type}")
         default_zones_channels_var.set(f"{default_settings}")
-        debug_output('Read settings from CS7000_convert_setting.csv')
 
 def getConfigFolderPath():
 
@@ -169,6 +181,10 @@ def getConfigFolderPath():
 def raise_above_all(window):
     window.attributes('-topmost', 1)
     window.attributes('-topmost', 0)
+
+def update_debug_output(*args):
+    # This will be filled in later once the widget exists
+    pass
 
 def clear_and_rebuild():
     root.title("CS7000 Code Plug Utility - By Jason Johnson (K3JSJ) <k3jsj@arrl.net>  Version 1.3")
@@ -223,15 +239,50 @@ def clear_and_rebuild():
     btn_convert_codeplug.pack(padx=10, pady=5, fill="x")
     btn_exit.pack(padx=10, pady=5, fill="x")
 
-
+    
     # Create a frame for the debug output
     debug_frame = ttk.LabelFrame(right_frame, text="Debug Output")
     debug_frame.pack(side="left", padx=10, pady=10, fill="both", expand=True)
 
-    # Create a label to display the debug output
-    debug_output_label = ttk.Label(debug_frame, textvariable=debug_output_var)
-    debug_output_label.pack(padx=10, pady=10)
+    # Create a frame to hold the text widget + scrollbar
+    scroll_frame = ttk.Frame(debug_frame)
+    scroll_frame.pack(fill="both", expand=True)
 
+    # Create the vertical scrollbar
+    debug_scrollbar = ttk.Scrollbar(scroll_frame, orient="vertical")
+    debug_scrollbar.pack(side="right", fill="y")
+
+    # Create the text widget for debug output
+    global debug_output_text
+    debug_output_text = tk.Text(
+        scroll_frame,
+        wrap="word",
+        yscrollcommand=debug_scrollbar.set,
+        height=10
+    )
+    debug_output_text.pack(side="left", fill="both", expand=True)
+
+    # Redefine the global function to update the widget
+    def update_debug_output(*args):
+        debug_output_text.delete("1.0", "end")
+        debug_output_text.insert("end", debug_output_var.get())
+
+    # Connect scrollbar to text widget
+    debug_scrollbar.config(command=debug_output_text.yview)
+
+    debug_output_var.trace_add("write", update_debug_output)
+
+
+    #######
+
+    # Create a frame for the debug output
+    #debug_frame = ttk.LabelFrame(right_frame, text="Debug Output")
+    #debug_frame.pack(side="left", padx=10, pady=10, fill="both", expand=True)
+
+    # Create a label to display the debug output
+    #debug_output_label = ttk.Label(debug_frame, textvariable=debug_output_var)
+    #debug_output_label.pack(padx=10, pady=10)
+    #########
 
     # Read CSV and set variables if the file exists
     try:
