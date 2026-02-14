@@ -42,10 +42,10 @@ class DigitalContacts:
 
     def getContact(self, alias):
         try:
-            index = self._contactDict[alais]
+            index = self._contactDict[alias]
             return self._rows[index]
         except KeyError:
-            raise KeyError(f"Alias '{talkGroup}' not found in contact dictionary")
+            raise KeyError(f"Alias '{alias}' not found in contact dictionary")
         except IndexError:
             raise IndexError(f"Index for alias '{alias}' is out of range")
         except Exception as e:

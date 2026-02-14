@@ -2,6 +2,7 @@ import os
 import csv
 import sys
 import openpyxl
+from connectSystems.CS7000.DigitalContacts import DigitalContacts
 from openpyxl import Workbook
 from hashlib import sha256
 from decimal import Decimal
@@ -157,6 +158,52 @@ class Channels:
             self.writeToSpreadsheet(True)
             self.LoadChannelNames(self.output_file)
             return (self._UhfChannels.copy())
+        if self._fileType == "ERROR":
+            print("Error!  Input file is not the CSV format expected from Anytone CPS.")
+            return (-1)
+
+    def ConvertDirectMode(self, contacts : DigitalContacts):
+        # Update Digital Channels to use Direct mode output vice Table lookup 
+        numAliasNotFound = 0
+        if self._fileType in ("Anytone", "CS7000_analog_channels", "CS7000_digital_channels"):
+            print("Writing channels to spreadsheet using Direct mode.")
+
+            for row in self._channelRowsDigital:
+                # 1. Get alias
+                alias = row[19]
+                if alias == "0":
+                    continue
+
+                # 2. Lookup contact info
+                try:
+                    result = contacts.getContact(alias)
+                except:
+                    aliasNotFound += f"{alias}\n"
+                    numAliasNotFound += 1
+                    pass
+
+                # Defensive check in case contact lookup fails
+                if not result or len(result) < 3:
+                    raise ValueError(f"Invalid contact lookup for alias '{alias}': {result}")
+
+                # 3. Extract required fields
+                digitalContact = result[1]
+                contactType    = result[3]   # second element
+
+                if (contactType == "Private Call"):
+                    contactType = "Private"
+                else:
+                    contactType = "Group"
+
+                # 4. Update row fields
+                row[19] = digitalContact     # overwrite alias with digitalContact
+                row[-2] = "Direct"           # second-to-last element
+                row[-1] = contactType        # last element
+            # Now that we have updated every row call method to output codeplug
+            if (numAliasNotFound > 0):
+                debug_output("Did not find {numAliasNotFond} talkgroups in TalkGroups.CSV\n{aliasNotFound}")
+
+            return (self.Convert())
         if self._fileType == "ERROR":
             print("Error!  Input file is not the CSV format expected from Anytone CPS.")
             return (-1)

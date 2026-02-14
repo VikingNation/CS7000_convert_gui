@@ -4,7 +4,7 @@ import csv
 import os
 import platform
 from connectSystems.CS7000.Constants import Const
-from tkinter import ttk, filedialog
+from tkinter import ttk, filedialog, messagebox
 from connectSystems.CS7000.Channels import  Channels
 from connectSystems.CS7000.DigitalContacts import DigitalContacts
 from connectSystems.CS7000.Zones import Zones
@@ -19,6 +19,48 @@ from connectSystems.CS7000.Zones import Zones
 #           Portions of this source code were generated using Microsoft Co-Pilot
 #           This version of the applicatation has been updated for
 #           CPS verseion 1.2.19.00 Beta and CS7000 Firmware version 9.00.93
+
+def check_files_closed(file_list):
+    """
+    Checks whether each file in file_list is currently open/locked.
+    Returns:
+        0  if all files are closed
+       -1  if one or more files are open
+    """
+
+    open_files = []
+
+    for filename in file_list:
+        if not os.path.exists(filename):
+            # If the file doesn't exist, it's definitely not open
+            continue
+
+        try:
+            # Try opening the file in append mode exclusively
+            # If the file is open by another process, this will fail
+            with open(filename, "a"):
+                pass
+        except Exception:
+            # File is locked/open by another program
+            open_files.append(filename)
+
+    # If any files are open, show dialog and return -1
+    if open_files:
+        root.withdraw()  # Hide the root window
+
+        msg = (
+            "Cannot convert the Codeplug.\n\n"
+            "The following files are open and need to be closed before you can continue:\n\n"
+            + "\n".join(open_files)
+        )
+
+        messagebox.showerror("Files Are Open", msg)
+        root.deiconify()
+        return -1
+
+    # All files are closed
+    return 0
+
 
 def select_input_directory():
     directory = filedialog.askdirectory(title="Chose directory for Anytone input files")
@@ -59,12 +101,22 @@ def convert_codeplug():
     input_directory = getDirectoryname(input_directory_var.get())
     output_directory = getDirectoryname(output_directory_var.get())
 
+    # Input files
     contacts_file = input_directory + "/TalkGroups.CSV"
     channels_file = input_directory + "/Channel.CSV"
     zones_file = input_directory + "/Zone.CSV"
 
-    # Convert contact file
+    # Output files
     converted_contacts_file = output_directory + "/CS7000_contacts.xlsx"
+    converted_channels_file = output_directory + "/CS7000_channels.xlsx"
+    converted_zones_file = output_directory + "/CS7000_zones.xlsx"
+
+    if (check_files_closed([converted_contacts_file, converted_channels_file, converted_zones_file])):
+        # One of the output files is open. Exit this routine
+        debug_output("Cannot convert codeplug. One of the output files is open. Please clode the file before attempting to convert again")
+        return
+
+    # Convert contact file
     contacts = DigitalContacts(contacts_file, converted_contacts_file)
 
     # Verify contacts withint specification of radio
@@ -86,8 +138,7 @@ def convert_codeplug():
 
     debug_output("Including analog channels in conversion is " + str(includeAnalogChannels))
 
-    converted_channels_file = output_directory + "/CS7000_channels.xlsx"
-
+    
     if ( default_zones_channels_var.get() == "include" ):
         channels = Channels(stock_analog_channel_file, converted_channels_file, includeAnalogChannels)
         channels.load(stock_digital_channel_file)
@@ -98,7 +149,7 @@ def convert_codeplug():
     # Check size of channel list
     numberChannels= channels.getNumberChannels()
     if (numberContacts <= Const.MAXCHANNELS):
-        uhfChannels = channels.Convert()
+        uhfChannels = channels.ConvertDirectMode(contacts)
         errorMakingChannels = False
         debug_output(f"Converted channels to {converted_channels_file}")
     else:
@@ -106,7 +157,7 @@ def convert_codeplug():
         debug_output(f"Cannot convert chanels file. You have {numberChannels} channels which exceeds the maximum allowed size of {Const.MAXCHANNELS}")
 
     # Convert zones file
-    converted_zones_file = output_directory + "/CS7000_zones.xlsx"
+        
     if ( default_zones_channels_var.get() == "include" ):
         zones = Zones(stock_zones_file, converted_zones_file, uhfChannels)
         zones.load(zones_file)
