@@ -1,4 +1,5 @@
 import csv
+import connectSystems.CS7000.Constants
 from hashlib import sha256
 import xlsxwriter
 
@@ -10,7 +11,7 @@ class DigitalContacts:
 
         self.__fileType = ''
         self.__fileVersion = ''
-        self.rows = []
+        self._rows = []
 
         self.__DetermineFileType()
         self.__LoadRows()
@@ -26,9 +27,33 @@ class DigitalContacts:
         with open(self.input_file, mode='r', newline='', encoding="utf-8") as infile:
             reader = csv.reader(infile)
             for row in reader:
-                self.rows.append(row)
+                self._rows.append(row)
 
-        self.__rowsInFile = len(self.rows)
+        self.__rowsInFile = len(self._rows)
+        self._buildDict()
+
+
+    def _buildDict(self):
+        self._contactDict = {}
+
+        for index, row in enumerate(self._rows):
+            key = row[2]          # second element is the Alias
+            self._contactDict[key] = index
+
+    def getContact(self, alias):
+        try:
+            index = self._contactDict[alais]
+            return self._rows[index]
+        except KeyError:
+            raise KeyError(f"Alias '{talkGroup}' not found in contact dictionary")
+        except IndexError:
+            raise IndexError(f"Index for alias '{alias}' is out of range")
+        except Exception as e:
+            raise Exception(f"Unexpected error in getContact(): {e}")
+
+    def getNumberContacts(self):
+        return self.__rowsInFile
+
 
 
     # ------------------------------------------------------------
@@ -55,7 +80,7 @@ class DigitalContacts:
 
         rowNum = 0
 
-        for row in self.rows:
+        for row in self._rows:
             # Skip header row
             if rowNum == 0:
                 worksheet.write(rowNum, 0, "No")

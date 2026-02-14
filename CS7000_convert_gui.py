@@ -3,6 +3,7 @@ import tkinter as tk
 import csv
 import os
 import platform
+from connectSystems.CS7000.Constants import Const
 from tkinter import ttk, filedialog
 from connectSystems.CS7000.Channels import  Channels
 from connectSystems.CS7000.DigitalContacts import DigitalContacts
@@ -65,8 +66,15 @@ def convert_codeplug():
     # Convert contact file
     converted_contacts_file = output_directory + "/CS7000_contacts.xlsx"
     contacts = DigitalContacts(contacts_file, converted_contacts_file)
-    contacts.Convert()
-    debug_output("Converted talkgroup file in " + converted_contacts_file)
+
+    # Verify contacts withint specification of radio
+    numberContacts = contacts.getNumberContacts()
+    if (numberContacts <= Const.MAXCONTACTS):
+        contacts.Convert()
+        debug_output(f"Converted talkgroup file in {converted_contacts_file}")
+    else:
+        debug_output(f"Cannot convert talkgroups file. You have {numberContacts} talkgroups which exceeds the maximum allowed size of {Const.MAXCONTACTS}")
+
 
     # Convert channels file
     if ( channel_type_var.get() == "digital_analog"):
@@ -85,8 +93,13 @@ def convert_codeplug():
     else:
         channels = Channels(channels_file, converted_channels_file, includeAnalogChannels)
 
-    uhfChannels = channels.Convert()
-    debug_output("Converted channels to " +  converted_channels_file)
+    # Check size of channel list
+    numberChannels= channels.getNumberChannels()
+    if (numberContacts <= Const.MAXCHANNELS):
+        uhfChannels = channels.Convert()
+        debug_output(f"Converted channels to {converted_channels_file}")
+    else:
+        debug_output(f"Cannot convert chanels file. You have {numberChannels} channels which exceeds the maximum allowed size of {Const.MAXCHANNELS}")
 
     # Convert zones file
     converted_zones_file = output_directory + "/CS7000_zones.xlsx"

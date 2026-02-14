@@ -26,6 +26,9 @@ class Channels:
         self._analogRowsWritten = 0
         self._digitalRowsWritten = 0
 
+    def getNumberChannels(self):
+        return len(self._channelRowsAnalog)+len(self._channelRowsDigital)
+
 
     def load(self,input_file):
         self.input_file = input_file
