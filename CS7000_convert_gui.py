@@ -344,9 +344,28 @@ disclaim_text = disclaim_text + "If you do not accept these terms press the Reje
 
 disclaim_text = disclaim_text + "-----BEGIN PGP SIGNATURE-----\n\niHUEARYKAB0WIQR+IRDUkGkAJUU5yYJZwtXH9CXoAgUCZ3g+9AAKCRBZwtXH9CXo\nAiHpAQCY2cQ/T5kN6T2dd1p/E/08SMcZUVSq6BGqsiW4RB4isQD/fOCoRZxwVpLa\nJ95DoRyRMoCQj/vacDUb3vtB/K5Isgg=\n=nm48\n-----END PGP SIGNATURE-----\n"
 
-textbox = tk.Text(root, height=32, width=80)
+
+# Frame to hold the text widget and both scrollbars
+text_frame = tk.Frame(root)
+text_frame.pack(padx=10, pady=10, fill="both", expand=True)
+
+# Create the text widget
+textbox = tk.Text(
+    text_frame,
+    height=32,
+    width=80,
+    wrap="word"   # required for horizontal scrolling
+)
 textbox.insert(tk.END, disclaim_text)
-textbox.pack(pady=10, padx=10)
+textbox.pack(side="left", fill="both", expand=True)
+
+# Vertical scrollbar
+scroll_y = tk.Scrollbar(text_frame, orient="vertical", command=textbox.yview)
+scroll_y.pack(side="right", fill="y")
+
+# Attach scrollbar to the text widget
+textbox.configure(yscrollcommand=scroll_y.set)
+
 accept_button = tk.Button(root, text="Accept", command=clear_and_rebuild)
 accept_button.pack(side=tk.LEFT, padx=20, pady=10)
 
