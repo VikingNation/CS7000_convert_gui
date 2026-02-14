@@ -345,35 +345,40 @@ disclaim_text = disclaim_text + "If you do not accept these terms press the Reje
 disclaim_text = disclaim_text + "-----BEGIN PGP SIGNATURE-----\n\niHUEARYKAB0WIQR+IRDUkGkAJUU5yYJZwtXH9CXoAgUCZ3g+9AAKCRBZwtXH9CXo\nAiHpAQCY2cQ/T5kN6T2dd1p/E/08SMcZUVSq6BGqsiW4RB4isQD/fOCoRZxwVpLa\nJ95DoRyRMoCQj/vacDUb3vtB/K5Isgg=\n=nm48\n-----END PGP SIGNATURE-----\n"
 
 
-# Frame to hold the text widget and both scrollbars
+# --- Scrollable text area ---
 text_frame = tk.Frame(root)
 text_frame.pack(padx=10, pady=10, fill="both", expand=True)
 
-# Create the text widget
 textbox = tk.Text(
     text_frame,
     height=32,
     width=80,
-    wrap="word"   # required for horizontal scrolling
+    wrap="word"
 )
 textbox.insert(tk.END, disclaim_text)
 textbox.pack(side="left", fill="both", expand=True)
 
-# Vertical scrollbar
 scroll_y = tk.Scrollbar(text_frame, orient="vertical", command=textbox.yview)
 scroll_y.pack(side="right", fill="y")
 
-# Attach scrollbar to the text widget
 textbox.configure(yscrollcommand=scroll_y.set)
 
-accept_button = tk.Button(root, text="Accept", command=clear_and_rebuild)
-accept_button.pack(side=tk.LEFT, padx=20, pady=10)
+# --- FIX: Buttons in a dedicated bottom frame ---
+button_frame = tk.Frame(root)
+button_frame.pack(side="bottom", fill="x")   # <- does NOT expand
 
-reject_button = tk.Button(root, text="Reject", command=reject_terms)
-reject_button.pack(side=tk.RIGHT, padx=20, pady=10)
+accept_button = tk.Button(button_frame, text="Accept", command=clear_and_rebuild)
+accept_button.pack(side="left", padx=20, pady=10)
+
+reject_button = tk.Button(button_frame, text="Reject", command=reject_terms)
+reject_button.pack(side="right", padx=20, pady=10)
+
+root.update_idletasks()  # let Tk compute real widget sizes
+root.minsize(root.winfo_width(), root.winfo_height())
+
 root.geometry("800x700+0+0")
-
 raise_above_all(root)
+
 
 
 # Start the main event loop
