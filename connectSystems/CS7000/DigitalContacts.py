@@ -64,10 +64,9 @@ class DigitalContacts:
             self.ConvertAnytoneTalkGroups()
 
         elif self.__fileType == "CS7000":
-            print("Input file is already in format for the CS7000. Nothing to convert.")
+            return 0
 
         elif self.__fileType == "ERROR":
-            print("Error! Input file is not the CSV format expected from Anytone CPS.")
             return -1
 
 
@@ -119,7 +118,6 @@ class DigitalContacts:
             try:
                 header = next(reader)
             except StopIteration:
-                print("File is empty.")
                 self.__fileType = "ERROR"
                 return
 

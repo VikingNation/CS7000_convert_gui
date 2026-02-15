@@ -100,7 +100,7 @@ class Zones:
         if self._fileType in ("Anytone", "CS7000"):
             self.writeToSpreadsheet()
         else:
-            print(f"Cannot convert input file of type {self._fileType}")
+            print(f"Error: Cannot convert input file of type {self._fileType}")
 
     def writeToSpreadsheet(self):
         """

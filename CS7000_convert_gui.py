@@ -28,9 +28,10 @@ from connectSystems.CS7000.Zones import Zones
 
 APP_VERSION = "1.3.1"
 
-# Global variables (will be initialized after root is created)
+# Global variables
 root = None
 debug_output_var = None
+debug_output_text = None
 
 # Location of stock Zones and Analog and Digital Channels CSV files that come pre-loaded with CS7000
 stock_zones_file = "codeplugs\\CS7000_M17_PLUS_V9.00.93_zones.csv"
@@ -38,13 +39,27 @@ stock_analog_channel_file = "codeplugs\\CS7000_M17_PLUS_V9.00.93_analog_channels
 stock_digital_channel_file = "codeplugs\\CS7000_M17_PLUS_V9.00.93_digital_channels.csv"
 
 
-def update_debug_output(text):
-    # Safe version used before UI is built
-    try:
-        debug_output_var.set(debug_output_var.get() + "\n" + text)
-    except Exception:
-        # debug_output_var may not exist yet
-        pass
+def update_debug_output(text: str):
+    """
+    Global debug logger.
+    - Always appends to debug_output_var (StringVar).
+    - If the debug ScrolledText widget exists, it is updated too.
+    Safe to call before the UI is fully built.
+    """
+    global debug_output_var, debug_output_text
+
+    if debug_output_var is not None:
+        current = debug_output_var.get()
+        if current:
+            debug_output_var.set(current + "\n" + text)
+        else:
+            debug_output_var.set(text)
+
+    # Only update the widget if it exists
+    if debug_output_text is not None:
+        debug_output_text.delete("1.0", "end")
+        debug_output_text.insert("end", debug_output_var.get())
+        debug_output_text.see("end")
 
 
 def check_files_closed(file_list):
@@ -215,7 +230,7 @@ def convert_codeplug():
     if numberZones <= Const.MAXZONES:
         zones.Convert()
         errorMakingZones = False
-        udpate_debug_output(f"Converted zones file to {converted_zones_file}")
+        update_debug_output(f"Converted zones file to {converted_zones_file}")
     else:
         errorMakingZones = True
         update_debug_output(
@@ -293,6 +308,8 @@ def raise_above_all(window):
 
 
 def build_main_ui():
+    global debug_output_text
+
     root.title(
         f"CS7000 Code Plug Utility - By Jason Johnson (K3JSJ) <k3jsj@arrl.net>  Version {APP_VERSION}"
     )
@@ -422,7 +439,6 @@ def build_main_ui():
     debug_frame = tb.Labelframe(right_frame, text="Debug Output", padding=10)
     debug_frame.pack(side="left", padx=10, pady=10, fill="both", expand=True)
 
-    global debug_output_text
     debug_output_text = ScrolledText(
         debug_frame,
         autohide=True,
@@ -432,12 +448,8 @@ def build_main_ui():
     )
     debug_output_text.pack(fill="both", expand=True)
 
-    def update_debug_output(text):
-        # Update the StringVar
-        debug_output_var.set(debug_output_var.get() + "\n" + text)
-
-        # Update the ScrolledText widget
-        debug_output_text.delete("1.0", "end")
+    # After creating the widget, refresh it with any existing log
+    if debug_output_var.get():
         debug_output_text.insert("end", debug_output_var.get())
         debug_output_text.see("end")
 
@@ -447,11 +459,11 @@ def build_main_ui():
     except FileNotFoundError:
         update_debug_output("Did not find CS7000_convert_settings.csv. Please select location of files")
 
+    # Let Tk compute natural size, then lock minimum
     root.update_idletasks()
     root.minsize(root.winfo_width(), root.winfo_height())
 
     raise_above_all(root)
-
 
 
 def show_about():
@@ -466,10 +478,10 @@ def show_about():
         parent=root
     )
 
+
 def show_help():
     help_win = tb.Toplevel(root)
     help_win.title("Help - CS7000 Code Plug Utility")
-    help_win.geometry("800x600+50+50")
 
     help_text = (
         "CS7000 Code Plug Utility Help\n\n"
@@ -488,9 +500,11 @@ def show_help():
     text.text.configure(state="disabled")
     text.pack(fill="both", expand=True)
 
-    # Optional: center on screen
-    dialog.geometry(f"+{root.winfo_x()+50}+{root.winfo_y()+50}")
-
+    # Optional: center relative to root
+    help_win.update_idletasks()
+    x = root.winfo_x() + 50
+    y = root.winfo_y() + 50
+    help_win.geometry(f"+{x}+{y}")
 
     raise_above_all(help_win)
 
@@ -565,14 +579,17 @@ def show_disclaimer():
     )
     reject_button.pack(side="right", padx=20, pady=10)
 
-    # --- CRITICAL FIX: Let Tk compute size, then lock minimum ---
-    dialog.update_idletasks()  # compute natural size
+    # Let Tk compute size, then lock minimum
+    dialog.update_idletasks()
     dialog.minsize(dialog.winfo_width(), dialog.winfo_height())
 
-    # Optional: center on screen
-    dialog.geometry(f"+{root.winfo_x()+50}+{root.winfo_y()+50}")
+    # Optional: center relative to root
+    x = root.winfo_x() + 50
+    y = root.winfo_y() + 50
+    dialog.geometry(f"+{x}+{y}")
 
     raise_above_all(dialog)
+
 
 # --- Application startup ---
 
@@ -587,19 +604,17 @@ root.title(
     f"CS7000 Code Plug Utility - By Jason Johnson (K3JSJ) <k3jsj@arrl.net>  Version {APP_VERSION}"
 )
 
-configFolderPath = getConfigFolderPath()
+# Initialize variables BEFORE any debug logging
+debug_output_var = tk.StringVar(value="")
 channel_type_var = tk.StringVar(value="digital")
 input_directory_var = tk.StringVar()
 output_directory_var = tk.StringVar()
-debug_output_var = tk.StringVar()
 default_zones_channels_var = tk.StringVar(value="include")
 IdMethod_var = tk.StringVar(value="direct")
 
-root.update_idletasks()
-root.minsize(root.winfo_width(), root.winfo_height())
+configFolderPath = getConfigFolderPath()
 
 raise_above_all(root)
-
 show_disclaimer()
 
 root.mainloop()

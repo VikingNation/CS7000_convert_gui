@@ -49,8 +49,6 @@ class Channels:
             rowNum_dmr = len(self._channelRowsDigital)
             rowNum_analog = len(self._channelRowsAnalog)
 
-            print(f"Loading channels from a {self._fileType} formatted CSV")
-
             # ---------------------------------------------------------
             # PROCESS CSV ROWS
             # ---------------------------------------------------------
@@ -160,24 +158,19 @@ class Channels:
                             if ( mode == "FM"):
                                 self._channelRowsAnalog.append(outputRowAnalog[:])
                                 rowNum_analog += 1
-                            else:
-                                print(f"Error! Invalid mode {mode}")
 
     def Convert(self):
         if self._fileType in ("Anytone", "CS7000_analog_channels", "CS7000_digital_channels"):
-            print("Writing channels to spreadsheet and returning UHF channel list.")
             self.writeToSpreadsheet(True)
             self.LoadChannelNames(self.output_file)
             return (self._UhfChannels.copy())
         if self._fileType == "ERROR":
-            print("Error!  Input file is not the CSV format expected from Anytone CPS.")
             return (-1)
 
     def ConvertDirectMode(self, contacts : DigitalContacts):
         # Update Digital Channels to use Direct mode output vice Table lookup 
         numAliasNotFound = 0
         if self._fileType in ("Anytone", "CS7000_analog_channels", "CS7000_digital_channels"):
-            print("Writing channels to spreadsheet using Direct mode.")
 
             for row in self._channelRowsDigital:
                 # 1. Get alias
@@ -216,14 +209,12 @@ class Channels:
 
             return (self.Convert())
         if self._fileType == "ERROR":
-            print("Error!  Input file is not the CSV format expected from Anytone CPS.")
             return (-1)
 
     def _find_first_empty_row(self, ws, col=1):
         row = 2
         while True:
             value = ws.cell(row=row, column=col).value
-            print(f"_find_first_empty_row: Row {row} Value {value}")
             if value is None or str(value).strip() == "":
                 return row
             row += 1
@@ -266,7 +257,6 @@ class Channels:
         else:
             rowNum_analog = self._find_first_empty_row(analogWorksheet)
             rowNum_dmr = self._find_first_empty_row(digitalWorksheet)
-            print(f"Appending to spreadsheet: Analog row {rowNum_analog} DMR row {rowNum_dmr}")
 
         # ---------------------------------------------------------
         # WRITE HEADERS (only if not appending)
@@ -344,7 +334,6 @@ class Channels:
                                     if (headerHash == "0f5e98e8c8aa9beb2dba3ad016070b300fb65b2c6cb2c5e6c4c8c2df7d1d9d4f"):
                                         self._fileType = 'CS7000'
                                     else:
-                                        print("Could not determine type of input file\nHash of file header is ", headerHash)
                                         self._fileType = 'ERROR'
 
                 numRows = numRows + 1
