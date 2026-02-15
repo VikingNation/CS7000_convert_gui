@@ -33,6 +33,8 @@ root = None
 debug_output_var = None
 debug_output_text = None
 
+icon_file="K3JSJ_avatar_256_by_256.png"
+
 # Location of stock Zones and Analog and Digital Channels CSV files that come pre-loaded with CS7000
 stock_zones_file = "codeplugs\\CS7000_M17_PLUS_V9.00.93_zones.csv"
 stock_analog_channel_file = "codeplugs\\CS7000_M17_PLUS_V9.00.93_analog_channels.csv"
@@ -314,6 +316,8 @@ def build_main_ui():
         f"CS7000 Code Plug Utility - By Jason Johnson (K3JSJ) <k3jsj@arrl.net>  Version {APP_VERSION}"
     )
 
+    root.iconphoto(False, tk.PhotoImage(file=icon_file))
+
     for widget in root.winfo_children():
         widget.destroy()
 
@@ -466,67 +470,88 @@ def build_main_ui():
 
     raise_above_all(root)
 
-
 def show_about():
+    import webbrowser
+
+    # Create window minimized first (prevents flicker)
     about_win = tb.Toplevel(root)
     about_win.title("About CS7000 Code Plug Utility")
+    about_win.withdraw()
+    about_win.iconify()
+
+    # Load icon image
+    icon_img = tk.PhotoImage(file=icon_file)
+    about_win.iconphoto(False, icon_img)
+
     about_win.resizable(False, False)
     about_win.transient(root)
     about_win.grab_set()
 
+    # --- MAIN FRAME ---
     frame = tb.Frame(about_win, padding=20)
     frame.pack(fill="both", expand=True)
 
+    # --- LEFT COLUMN: ICON ---
+    icon_label = tb.Label(frame, image=icon_img)
+    icon_label.image = icon_img  # prevent garbage collection
+    icon_label.grid(row=0, column=0, rowspan=6, padx=(0, 20), sticky="n")
+
+    # --- RIGHT COLUMN: TEXT ---
     tb.Label(
         frame,
         text="CS7000 Code Plug Utility",
         font="-size 16 -weight bold"
-    ).pack(pady=(0, 10))
+    ).grid(row=0, column=1, sticky="w", pady=(0, 10))
 
     tb.Label(
         frame,
         text=f"Version {APP_VERSION}",
         font="-size 12"
-    ).pack(pady=(0, 10))
+    ).grid(row=1, column=1, sticky="w", pady=(0, 10))
 
     tb.Label(
         frame,
         text="Author: Jason Johnson (K3JSJ)",
         font="-size 11"
-    ).pack(pady=(0, 10))
+    ).grid(row=2, column=1, sticky="w", pady=(0, 10))
 
     tb.Label(
         frame,
-        text="Convert Anytone talkgroups, channels, and zones into CS7000 format.\n\nProject Repository",
+        text="Convert Anytone talkgroups, channels, and zones into CS7000 format.\n\nProject Repository:",
         wraplength=400,
         justify="left"
-    ).pack(pady=(0, 20))
+    ).grid(row=3, column=1, sticky="w", pady=(0, 10))
 
     # --- CLICKABLE LINK ---
     link = tb.Label(
         frame,
-        text="Project Repository: https://github.com/VikingNation/CS7000_convert_gui",
+        text="https://github.com/VikingNation/CS7000_convert_gui",
         foreground="blue",
         cursor="hand2",
         font="-underline 1"
     )
-    link.pack(pady=(0, 20))
+    link.grid(row=4, column=1, sticky="w", pady=(0, 20))
 
     def open_repo(event):
-        import webbrowser
         webbrowser.open("https://github.com/VikingNation/CS7000_convert_gui")
 
     link.bind("<Button-1>", open_repo)
 
+    # --- OK BUTTON ---
     tb.Button(
         frame,
         text="OK",
         bootstyle="primary",
         command=about_win.destroy
-    ).pack()
+    ).grid(row=5, column=1, sticky="e")
 
-    # Center relative to root
+    # --- Compute size while hidden ---
     about_win.update_idletasks()
+
+    # --- Restore from iconified state ---
+    about_win.deiconify()
+
+    # --- Center relative to root ---
     x = root.winfo_x() + (root.winfo_width() - about_win.winfo_width()) // 2
     y = root.winfo_y() + (root.winfo_height() - about_win.winfo_height()) // 2
     about_win.geometry(f"+{x}+{y}")
@@ -538,6 +563,7 @@ def show_help():
 
     help_win = tb.Toplevel(root)
     help_win.title(f"Help - CS7000 Code Plug Utility - Version {APP_VERSION}")
+    help_win.iconphoto(False, tk.PhotoImage(file=icon_file))
 
     help_text = (
         "CS7000 Code Plug Utility Help\n\n"
@@ -590,7 +616,6 @@ def show_help():
     raise_above_all(help_win)
 
 def reject_terms():
-    print("Rejected terms of use")
     root.destroy()
 
 
@@ -621,6 +646,8 @@ def show_disclaimer():
 
     dialog = tb.Toplevel(root)
     dialog.title("Disclaimer and Terms of Use")
+    dialog.iconphoto(False, tk.PhotoImage(file=icon_file))
+
     dialog.transient(root)
     dialog.grab_set()
 
@@ -683,6 +710,7 @@ root = tb.Window(themename="flatly")
 root.title(
     f"CS7000 Code Plug Utility - By Jason Johnson (K3JSJ) <k3jsj@arrl.net>  Version {APP_VERSION}"
 )
+root.iconphoto(False, tk.PhotoImage(file=icon_file))
 
 # Initialize variables BEFORE any debug logging
 debug_output_var = tk.StringVar(value="")
