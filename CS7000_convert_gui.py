@@ -320,9 +320,10 @@ def build_main_ui():
     # Menu bar with Help / About
     menubar = tk.Menu(root)
     helpmenu = tk.Menu(menubar, tearoff=0)
-    helpmenu.add_command(label="Help", command=show_help)
+    helpmenu.add_command(label="Show Help", command=show_help)
     helpmenu.add_separator()
     helpmenu.add_command(label="About", command=show_about)
+    helpmenu.add_command(label="Exit App", command=exit_application)
     menubar.add_cascade(label="Help", menu=helpmenu)
     root.config(menu=menubar)
 
@@ -467,21 +468,76 @@ def build_main_ui():
 
 
 def show_about():
-    Messagebox.show_info(
-        title="About CS7000 Code Plug Utility",
-        message=(
-            "CS7000 Code Plug Utility\n"
-            f"Version {APP_VERSION}\n\n"
-            "Author: Jason Johnson (K3JSJ)\n"
-            "Convert Anytone talkgroups, channels, and zones into CS7000 format."
-        ),
-        parent=root
-    )
+    about_win = tb.Toplevel(root)
+    about_win.title("About CS7000 Code Plug Utility")
+    about_win.resizable(False, False)
+    about_win.transient(root)
+    about_win.grab_set()
 
+    frame = tb.Frame(about_win, padding=20)
+    frame.pack(fill="both", expand=True)
+
+    tb.Label(
+        frame,
+        text="CS7000 Code Plug Utility",
+        font="-size 16 -weight bold"
+    ).pack(pady=(0, 10))
+
+    tb.Label(
+        frame,
+        text=f"Version {APP_VERSION}",
+        font="-size 12"
+    ).pack(pady=(0, 10))
+
+    tb.Label(
+        frame,
+        text="Author: Jason Johnson (K3JSJ)",
+        font="-size 11"
+    ).pack(pady=(0, 10))
+
+    tb.Label(
+        frame,
+        text="Convert Anytone talkgroups, channels, and zones into CS7000 format.\n\nProject Repository",
+        wraplength=400,
+        justify="left"
+    ).pack(pady=(0, 20))
+
+    # --- CLICKABLE LINK ---
+    link = tb.Label(
+        frame,
+        text="Project Repository: https://github.com/VikingNation/CS7000_convert_gui",
+        foreground="blue",
+        cursor="hand2",
+        font="-underline 1"
+    )
+    link.pack(pady=(0, 20))
+
+    def open_repo(event):
+        import webbrowser
+        webbrowser.open("https://github.com/VikingNation/CS7000_convert_gui")
+
+    link.bind("<Button-1>", open_repo)
+
+    tb.Button(
+        frame,
+        text="OK",
+        bootstyle="primary",
+        command=about_win.destroy
+    ).pack()
+
+    # Center relative to root
+    about_win.update_idletasks()
+    x = root.winfo_x() + (root.winfo_width() - about_win.winfo_width()) // 2
+    y = root.winfo_y() + (root.winfo_height() - about_win.winfo_height()) // 2
+    about_win.geometry(f"+{x}+{y}")
+
+    raise_above_all(about_win)
 
 def show_help():
+    import webbrowser
+
     help_win = tb.Toplevel(root)
-    help_win.title("Help - CS7000 Code Plug Utility")
+    help_win.title(f"Help - CS7000 Code Plug Utility - Version {APP_VERSION}")
 
     help_text = (
         "CS7000 Code Plug Utility Help\n\n"
@@ -496,18 +552,42 @@ def show_help():
     )
 
     text = ScrolledText(help_win, autohide=True, padding=10, wrap="word")
-    text.insert("end", help_text)
-    text.text.configure(state="disabled")
     text.pack(fill="both", expand=True)
 
-    # Optional: center relative to root
+    # Insert text normally
+    text.insert("end", help_text)
+
+    # --- MAKE THE LINK CLICKABLE ---
+    link_url = "https://github.com/VikingNation/CS7000_convert_gui"
+    start_index = "end-2l linestart"   # start of the second-to-last line
+    end_index = "end-1l lineend"       # end of the second-to-last line
+
+    # Tag the hyperlink
+    text.text.tag_add("hyperlink", start_index, end_index)
+    text.text.tag_config(
+        "hyperlink",
+        foreground="blue",
+        underline=True
+    )
+
+    # Bind click event
+    def open_link(event):
+        webbrowser.open(link_url)
+
+    text.text.tag_bind("hyperlink", "<Button-1>", open_link)
+    text.text.tag_bind("hyperlink", "<Enter>", lambda e: text.text.config(cursor="hand2"))
+    text.text.tag_bind("hyperlink", "<Leave>", lambda e: text.text.config(cursor=""))
+
+    # Disable editing
+    text.text.configure(state="disabled")
+
+    # Center relative to root
     help_win.update_idletasks()
     x = root.winfo_x() + 50
     y = root.winfo_y() + 50
     help_win.geometry(f"+{x}+{y}")
 
     raise_above_all(help_win)
-
 
 def reject_terms():
     print("Rejected terms of use")
