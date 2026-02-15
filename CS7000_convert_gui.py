@@ -61,6 +61,28 @@ def check_files_closed(file_list):
     # All files are closed
     return 0
 
+def delete_file(filename):
+    """
+    Deletes the specified file if it exists.
+    Returns:
+        0  if the file was deleted
+        1  if the file did not exist
+       -1  if deletion failed (e.g., file is open or locked)
+    """
+    if not os.path.exists(filename):
+        return 1  # nothing to delete
+
+    try:
+        os.remove(filename)
+        return 0
+    except PermissionError:
+        # File is open or locked by another process
+        return -1
+    except Exception:
+        # Any other unexpected error
+        return -1
+
+
 
 def select_input_directory():
     directory = filedialog.askdirectory(title="Chose directory for Anytone input files")
@@ -182,6 +204,11 @@ def convert_codeplug():
     else:
         errorMakingZones = True
         debug_output("Cannot convert zones files. You have {numberZones} zones which exceeds the maximum allowed size of {Const.MAXZONES}")
+
+    # If we used direct mode delete the contacts file
+    if (IdMethod_var.get() == "direct"):
+        delete_file(converted_contacts_file)
+        messagebox.showinfo("Information","You selected the Direct method to output ID to the channel. For this case there is not contacts spreadsheet to import into the CS7000 CPS")
 
 
     open_file_explorer(output_directory)
