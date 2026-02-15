@@ -138,7 +138,6 @@ def convert_codeplug():
 
     debug_output("Including analog channels in conversion is " + str(includeAnalogChannels))
 
-    
     if ( default_zones_channels_var.get() == "include" ):
         channels = Channels(stock_analog_channel_file, converted_channels_file, includeAnalogChannels)
         channels.load(stock_digital_channel_file)
@@ -149,15 +148,25 @@ def convert_codeplug():
     # Check size of channel list
     numberChannels= channels.getNumberChannels()
     if (numberContacts <= Const.MAXCHANNELS):
-        uhfChannels = channels.ConvertDirectMode(contacts)
+        # Check if user seleted Direct method to output IDs to channels
+        if (IdMethod_var.get() == "direct"):
+            uhfChannels = channels.ConvertDirectMode(contacts)
+        else:
+            uhfChannels = channels.Convert()
         errorMakingChannels = False
         debug_output(f"Converted channels to {converted_channels_file}")
+
+        # Output list of VHF channels excluded
+        VhfChannels = channels.getVhfChannels()
+        debug_output(f"Excluded the following VHF channels")
+        if (len(VhfChannels) > 0):
+            for key in sorted(VhfChannels):
+                debug_output(key)
     else:
         errorMakingChannels = True
         debug_output(f"Cannot convert chanels file. You have {numberChannels} channels which exceeds the maximum allowed size of {Const.MAXCHANNELS}")
 
     # Convert zones file
-        
     if ( default_zones_channels_var.get() == "include" ):
         zones = Zones(stock_zones_file, converted_zones_file, uhfChannels)
         zones.load(zones_file)
@@ -183,10 +192,11 @@ def exit_application():
     output_directory = getDirectoryname(output_directory_var.get())
     channel_type = channel_type_var.get()
     default_settings = default_zones_channels_var.get()
+    idMethod = IdMethod_var.get()
     with open(configFolderPath + '/CS7000_convert_settings.csv', mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(['Input Directory', 'Output Directory', 'Channel Type', 'Default Settings'])
-        writer.writerow([input_directory, output_directory, channel_type, default_settings])
+        writer.writerow(['Input Directory', 'Output Directory', 'Channel Type', 'Default Settings', 'ID Method'])
+        writer.writerow([input_directory, output_directory, channel_type, default_settings, idMethod])
    
     file.close()
     root.destroy()
@@ -200,15 +210,19 @@ def read_csv_and_set_variables(file_path):
         # Create a dictionary to store the variables
         variables = {header: value for header, value in zip(headers, data)}
 
-        # Set variables
+        # Set local variables for config values
         input_directory = variables.get('Input Directory', '')
         output_directory = variables.get('Output Directory', '')
         channel_type = variables.get('Channel Type', '')
         default_settings = variables.get('Default Settings', 'include')
+        idMethod = variables.get('ID Method', 'direct')
+
+        # Set variables used by UI widgets
         input_directory_var.set(f"Selected directory: {input_directory}")
         output_directory_var.set(f"Selected directory: {output_directory}")
         channel_type_var.set(f"{channel_type}")
         default_zones_channels_var.set(f"{default_settings}")
+        IdMethod_var.set(f"{idMethod}")
 
 def getConfigFolderPath():
 
@@ -265,13 +279,22 @@ def clear_and_rebuild():
     radio_digital_analog.pack(anchor="w", padx=10, pady=5)
 
     # Create frame for Default Zones/Channels
-    frame_default = ttk.LabelFrame(left_frame, text="Default Zones & Channels")
+    frame_default = ttk.LabelFrame(left_frame, text="Include radio default Zones & Channels")
     frame_default.pack(padx=10, pady=10, fill="x")
     # Create radio button for including firmware Zones & Channels
     radio_include_default = ttk.Radiobutton(frame_default, text="Include", variable=default_zones_channels_var, value="include")
     radio_exclude_default = ttk.Radiobutton(frame_default, text="Exclude", variable=default_zones_channels_var, value="exclude")
     radio_include_default.pack(anchor="w", padx=10, pady=5)
-    radio_exclude_default.pack(anchor="w", padx=10, pady=10)
+    radio_exclude_default.pack(anchor="w", padx=10, pady=5)
+
+    # Create frame to allow user to select if Table or Direct method should be
+    #  used to populate Talkgroup information in channel configuration
+    frame_IdMethod = ttk.LabelFrame(left_frame, text="Method to populate ID in channel")
+    frame_IdMethod.pack(padx=10, pady=10, fill="x")
+    radio_direct_method = ttk.Radiobutton(frame_IdMethod, text="Direct", variable=IdMethod_var, value="direct")
+    radio_table_method  = ttk.Radiobutton(frame_IdMethod, text="Table" , variable=IdMethod_var, value="table")
+    radio_direct_method.pack(anchor="w", padx=10, pady=5)
+    radio_table_method.pack(anchor="w", padx=10, pady=5)
 
     # Create buttons
     btn_select_input_dir = ttk.Button(left_frame, text="Select input directory", command=select_input_directory)
@@ -383,6 +406,11 @@ debug_output_var = tk.StringVar()
 
 # Variable to hold if user wants to include stock Zones & channels that come preloaded with firmware
 default_zones_channels_var = tk.StringVar()
+
+# Variable to hold method to populate ID (TalkGroup/Contact) on channel.
+# The "Table" method will store the TalkGroup/Contact alias
+# The "Direct" method will store the ID (TalkGroup/Contact)
+IdMethod_var = tk.StringVar()
 
 disclaim_text = "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA512\n\n"
 

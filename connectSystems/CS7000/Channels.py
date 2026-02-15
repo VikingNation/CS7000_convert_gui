@@ -11,6 +11,8 @@ class Channels:
     def __init__(self, input_file, output_file, includeAnalogChannels):
         self.input_file = input_file
         self.output_file = output_file
+        self._UhfChannels = {}
+        self._VhfChannels = {}
 
         # Setup header and default row records
         self._SetArrays()
@@ -21,11 +23,16 @@ class Channels:
         self.load(self.input_file)
 
         self._includeAnalogChannels = includeAnalogChannels
-        self._UhfChannels = {}
 
         # Track rows we have written to worksheet
         self._analogRowsWritten = 0
         self._digitalRowsWritten = 0
+
+    def getVhfChannels(self):
+        return (self._VhfChannels.copy())
+
+    def getUhfChannels(self):
+        return (self._UhfChannels.copy())
 
     def getNumberChannels(self):
         return len(self._channelRowsAnalog)+len(self._channelRowsDigital)
@@ -83,6 +90,10 @@ class Channels:
 
                         tx_freq = row[3]
                         rx_freq = row[2]
+
+                        # Check if VHF and if so add to list of VHF channels
+                        if (float(tx_freq) <= 300.0) and (float(rx_freq) <= 300):
+                            self._VhfChannels[channelName] = True
 
                         ptt_prohibit = row[24]
                         dmr_tx_permit = row[13]
@@ -372,8 +383,11 @@ class Channels:
                     tx_freq = input_sheet.cell(row, 19).value
 
                 tx = Decimal(tx_freq)
+                # Build list of UHF and VHF channel list
                 if ( (rx >= 400) and (rx <= 512)) and ((tx >= 400) and (tx <=512)):
                     self._UhfChannels[channelName] = True
+                else:
+                    self._VhfChannels[channelName] = True
                 row = row + 1
 
             processing_dmr_file = False

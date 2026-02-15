@@ -89,8 +89,6 @@ class Zones:
                     if self._channelFilterProvided:
                         if ch in self._uhfChannels:
                             filtered.append(ch)
-                        else:
-                            print("Filtering out channel", ch)
                     else:
                         filtered.append(ch)
 
@@ -174,8 +172,6 @@ class Zones:
                     if self._channelFilterProvided:
                         if element in self._uhfChannels:
                           outputRow.append(element)
-                        else:
-                            print("Filtering out channel ", element)
                     else:
                         outputRow.append(element)
 
