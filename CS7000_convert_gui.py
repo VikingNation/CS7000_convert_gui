@@ -1,5 +1,6 @@
 #!/bin/env python
 import os
+import sys
 import csv
 import platform
 import tkinter as tk
@@ -40,6 +41,11 @@ stock_zones_file = "codeplugs\\CS7000_M17_PLUS_V9.00.93_zones.csv"
 stock_analog_channel_file = "codeplugs\\CS7000_M17_PLUS_V9.00.93_analog_channels.csv"
 stock_digital_channel_file = "codeplugs\\CS7000_M17_PLUS_V9.00.93_digital_channels.csv"
 
+def resource_path(filename):
+    """Return absolute path to resource, works for dev and PyInstaller EXE."""
+    if hasattr(sys, "_MEIPASS"):
+        return os.path.join(sys._MEIPASS, filename)
+    return os.path.join(os.path.abspath("."), filename)
 
 def update_debug_output(text: str):
     """
@@ -316,7 +322,7 @@ def build_main_ui():
         f"CS7000 Code Plug Utility - By Jason Johnson (K3JSJ) <k3jsj@arrl.net>  Version {APP_VERSION}"
     )
 
-    root.iconphoto(False, tk.PhotoImage(file=icon_file))
+    root.iconphoto(False, tk.PhotoImage(file=resource_path(icon_file)))
 
     for widget in root.winfo_children():
         widget.destroy()
@@ -480,7 +486,7 @@ def show_about():
     about_win.iconify()
 
     # Load icon image
-    icon_img = tk.PhotoImage(file=icon_file)
+    icon_img = tk.PhotoImage(file=resource_path(icon_file))
     about_win.iconphoto(False, icon_img)
 
     about_win.resizable(False, False)
@@ -563,7 +569,7 @@ def show_help():
 
     help_win = tb.Toplevel(root)
     help_win.title(f"Help - CS7000 Code Plug Utility - Version {APP_VERSION}")
-    help_win.iconphoto(False, tk.PhotoImage(file=icon_file))
+    help_win.iconphoto(False, tk.PhotoImage(file=resource_path(icon_file)))
 
     help_text = (
         "CS7000 Code Plug Utility Help\n\n"
@@ -646,7 +652,7 @@ def show_disclaimer():
 
     dialog = tb.Toplevel(root)
     dialog.title("Disclaimer and Terms of Use")
-    dialog.iconphoto(False, tk.PhotoImage(file=icon_file))
+    dialog.iconphoto(False, tk.PhotoImage(file=resource_path(icon_file)))
 
     dialog.transient(root)
     dialog.grab_set()
@@ -710,7 +716,7 @@ root = tb.Window(themename="flatly")
 root.title(
     f"CS7000 Code Plug Utility - By Jason Johnson (K3JSJ) <k3jsj@arrl.net>  Version {APP_VERSION}"
 )
-root.iconphoto(False, tk.PhotoImage(file=icon_file))
+root.iconphoto(False, tk.PhotoImage(file=resource_path(icon_file)))
 
 # Initialize variables BEFORE any debug logging
 debug_output_var = tk.StringVar(value="")
