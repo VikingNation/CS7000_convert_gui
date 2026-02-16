@@ -25,6 +25,9 @@ class Zones:
 
         self.load(input_file)
 
+    def getNumberZones(self):
+        return len(self._zonesDict)
+
     def load(self, input_file):
         self.input_file = input_file
         self._DetermineFileType()
@@ -86,8 +89,6 @@ class Zones:
                     if self._channelFilterProvided:
                         if ch in self._uhfChannels:
                             filtered.append(ch)
-                        else:
-                            print("Filtering out channel", ch)
                     else:
                         filtered.append(ch)
 
@@ -99,7 +100,7 @@ class Zones:
         if self._fileType in ("Anytone", "CS7000"):
             self.writeToSpreadsheet()
         else:
-            print(f"Cannot convert input file of type {self._fileType}")
+            print(f"Error: Cannot convert input file of type {self._fileType}")
 
     def writeToSpreadsheet(self):
         """
@@ -171,8 +172,6 @@ class Zones:
                     if self._channelFilterProvided:
                         if element in self._uhfChannels:
                           outputRow.append(element)
-                        else:
-                            print("Filtering out channel ", element)
                     else:
                         outputRow.append(element)
 

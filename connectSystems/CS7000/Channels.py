@@ -2,6 +2,7 @@ import os
 import csv
 import sys
 import openpyxl
+from connectSystems.CS7000.DigitalContacts import DigitalContacts
 from openpyxl import Workbook
 from hashlib import sha256
 from decimal import Decimal
@@ -10,6 +11,8 @@ class Channels:
     def __init__(self, input_file, output_file, includeAnalogChannels):
         self.input_file = input_file
         self.output_file = output_file
+        self._UhfChannels = {}
+        self._VhfChannels = {}
 
         # Setup header and default row records
         self._SetArrays()
@@ -20,11 +23,19 @@ class Channels:
         self.load(self.input_file)
 
         self._includeAnalogChannels = includeAnalogChannels
-        self._UhfChannels = {}
 
         # Track rows we have written to worksheet
         self._analogRowsWritten = 0
         self._digitalRowsWritten = 0
+
+    def getVhfChannels(self):
+        return (self._VhfChannels.copy())
+
+    def getUhfChannels(self):
+        return (self._UhfChannels.copy())
+
+    def getNumberChannels(self):
+        return len(self._channelRowsAnalog)+len(self._channelRowsDigital)
 
 
     def load(self,input_file):
@@ -37,8 +48,6 @@ class Channels:
             # Get row number of number of elements in the channelRowsAnalog and channelRowsDigital
             rowNum_dmr = len(self._channelRowsDigital)
             rowNum_analog = len(self._channelRowsAnalog)
-
-            print(f"Loading channels from a {self._fileType} formatted CSV")
 
             # ---------------------------------------------------------
             # PROCESS CSV ROWS
@@ -79,6 +88,10 @@ class Channels:
 
                         tx_freq = row[3]
                         rx_freq = row[2]
+
+                        # Check if VHF and if so add to list of VHF channels
+                        if (float(tx_freq) <= 300.0) and (float(rx_freq) <= 300):
+                            self._VhfChannels[channelName] = True
 
                         ptt_prohibit = row[24]
                         dmr_tx_permit = row[13]
@@ -145,24 +158,63 @@ class Channels:
                             if ( mode == "FM"):
                                 self._channelRowsAnalog.append(outputRowAnalog[:])
                                 rowNum_analog += 1
-                            else:
-                                print(f"Error! Invalid mode {mode}")
 
     def Convert(self):
         if self._fileType in ("Anytone", "CS7000_analog_channels", "CS7000_digital_channels"):
-            print("Writing channels to spreadsheet and returning UHF channel list.")
             self.writeToSpreadsheet(True)
             self.LoadChannelNames(self.output_file)
             return (self._UhfChannels.copy())
         if self._fileType == "ERROR":
-            print("Error!  Input file is not the CSV format expected from Anytone CPS.")
+            return (-1)
+
+    def ConvertDirectMode(self, contacts : DigitalContacts):
+        # Update Digital Channels to use Direct mode output vice Table lookup 
+        numAliasNotFound = 0
+        if self._fileType in ("Anytone", "CS7000_analog_channels", "CS7000_digital_channels"):
+
+            for row in self._channelRowsDigital:
+                # 1. Get alias
+                alias = row[19]
+                if alias == "0":
+                    continue
+
+                # 2. Lookup contact info
+                try:
+                    result = contacts.getContact(alias)
+                except:
+                    aliasNotFound += f"{alias}\n"
+                    numAliasNotFound += 1
+                    pass
+
+                # Defensive check in case contact lookup fails
+                if not result or len(result) < 3:
+                    raise ValueError(f"Invalid contact lookup for alias '{alias}': {result}")
+
+                # 3. Extract required fields
+                digitalContact = result[1]
+                contactType    = result[3]   # second element
+
+                if (contactType == "Private Call"):
+                    contactType = "Private"
+                else:
+                    contactType = "Group"
+
+                # 4. Update row fields
+                row[19] = digitalContact     # overwrite alias with digitalContact
+                row[-2] = "Direct"           # second-to-last element
+                row[-1] = contactType        # last element
+            # Now that we have updated every row call method to output codeplug
+            if (numAliasNotFound > 0):
+                debug_output("Did not find {numAliasNotFond} talkgroups in TalkGroups.CSV\n{aliasNotFound}")
+
+            return (self.Convert())
+        if self._fileType == "ERROR":
             return (-1)
 
     def _find_first_empty_row(self, ws, col=1):
         row = 2
         while True:
             value = ws.cell(row=row, column=col).value
-            print(f"_find_first_empty_row: Row {row} Value {value}")
             if value is None or str(value).strip() == "":
                 return row
             row += 1
@@ -205,7 +257,6 @@ class Channels:
         else:
             rowNum_analog = self._find_first_empty_row(analogWorksheet)
             rowNum_dmr = self._find_first_empty_row(digitalWorksheet)
-            print(f"Appending to spreadsheet: Analog row {rowNum_analog} DMR row {rowNum_dmr}")
 
         # ---------------------------------------------------------
         # WRITE HEADERS (only if not appending)
@@ -283,7 +334,6 @@ class Channels:
                                     if (headerHash == "0f5e98e8c8aa9beb2dba3ad016070b300fb65b2c6cb2c5e6c4c8c2df7d1d9d4f"):
                                         self._fileType = 'CS7000'
                                     else:
-                                        print("Could not determine type of input file\nHash of file header is ", headerHash)
                                         self._fileType = 'ERROR'
 
                 numRows = numRows + 1
@@ -322,8 +372,11 @@ class Channels:
                     tx_freq = input_sheet.cell(row, 19).value
 
                 tx = Decimal(tx_freq)
+                # Build list of UHF and VHF channel list
                 if ( (rx >= 400) and (rx <= 512)) and ((tx >= 400) and (tx <=512)):
                     self._UhfChannels[channelName] = True
+                else:
+                    self._VhfChannels[channelName] = True
                 row = row + 1
 
             processing_dmr_file = False

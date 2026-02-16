@@ -1,0 +1,37 @@
+# NOTICE
+
+CS7000 Code Plug Utility  
+Copyright (c) 2024–2026  
+Jason Johnson (K3JSJ)
+
+This software incorporates components from the open‑source community.  
+The following third‑party packages are included in this distribution and are
+licensed under their respective open‑source licenses, as documented in
+`LICENSE.md`.
+
+This project makes use of the following third‑party libraries:
+
+- altgraph (MIT License)
+- et_xmlfile (MIT License)
+- openpyxl (MIT License)
+- packaging (Apache License 2.0)
+- pefile (MIT License)
+- Pillow (PIL License, MIT‑compatible)
+- PyInstaller (GPLv2 with special exception)
+- pyinstaller-hooks-contrib (GPLv2 with special exception)
+- pywin32-ctypes (MIT License)
+- setuptools (MIT License)
+- ttkbootstrap (MIT License)
+- XlsxWriter (BSD 2‑Clause License)
+
+The authors of this project acknowledge and thank the developers and
+maintainers of these open‑source packages for their contributions to the
+software ecosystem.
+
+No modifications have been made to the original license terms of these
+components. Copies or summaries of their licenses are provided in
+`LICENSE.md` in accordance with their respective requirements.
+
+This NOTICE file is provided for attribution purposes only and does not
+modify the terms of any license.
+
