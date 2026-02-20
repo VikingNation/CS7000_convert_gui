@@ -16,6 +16,7 @@ from connectSystems.CS7000.Channels import Channels
 from connectSystems.CS7000.DigitalContacts import DigitalContacts
 from connectSystems.CS7000.Zones import Zones
 
+from Deduper import Deduper
 # CS7000_convert_gui.py
 #
 # Author: Jason Johnson <k3jsj@arrl.net>
@@ -29,6 +30,8 @@ from connectSystems.CS7000.Zones import Zones
 
 APP_VERSION = "1.3.1"
 
+# DEBUG FLAG
+DEBUG = True
 # Global variables
 root = None
 debug_output_var = None
@@ -204,6 +207,14 @@ def convert_codeplug():
         channels.load(channels_file)
     else:
         channels = Channels(channels_file, converted_channels_file, includeAnalogChannels)
+
+    # Run Deduper
+    dedupe = Deduper(contacts, channels, None, None)
+    dedupe.run()
+
+    # Save deduped channels to
+    contacts = dedupe.contacts
+    channels = dedupe.channels
 
     numberChannels = channels.getNumberChannels()
     if numberChannels <= Const.MAXCHANNELS:
@@ -729,7 +740,11 @@ IdMethod_var = tk.StringVar(value="direct")
 configFolderPath = getConfigFolderPath()
 
 raise_above_all(root)
-show_disclaimer()
+
+if (DEBUG == False):
+    show_disclaimer()
+else:
+    build_main_ui()
 
 root.mainloop()
 

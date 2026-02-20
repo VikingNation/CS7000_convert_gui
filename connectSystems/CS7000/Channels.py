@@ -28,6 +28,33 @@ class Channels:
         self._analogRowsWritten = 0
         self._digitalRowsWritten = 0
 
+    def get_all_analog(self):
+        return list(self._channelRowsAnalog)
+
+    def get_all_digital(self):
+        return list(self._channelRowsDigital)
+
+    def find_analog_by_name(self, name):
+        return [c for c in self._channelRowsAnalog if c[1] == name]
+
+    def find_digital_by_name(self, name):
+        return [c for c in self._channelRowsDigital if c[1] == name]
+
+    def remove_analog(self, name):
+        self._channelRowsAnalog = [c for c in self._channelRowsAnalog if c[1] != name]
+        self._Uhfchannels = [c for c in self._Uhfchannels if c[1] != name]
+
+    def remove_analog(self, name):
+        self._channelRowsDigital = [c for c in self._channelRowsDigital if c[1] != name]
+        self._Uhfchannels = [c for c in self._Uhfchannels if c[1] != name]
+
+    def update_contact_name(self, old_alias, new_alias):
+        for ch in self._channelRowsDigital:
+            if ch[19] == old_alias:
+                print(f"update_contact_name:  {old_alias} => {new_alias}")
+                ch[19] = new_alias
+
+
     def getVhfChannels(self):
         return (self._VhfChannels.copy())
 
@@ -170,6 +197,7 @@ class Channels:
     def ConvertDirectMode(self, contacts : DigitalContacts):
         # Update Digital Channels to use Direct mode output vice Table lookup 
         numAliasNotFound = 0
+        aliasNotFound = ""
         if self._fileType in ("Anytone", "CS7000_analog_channels", "CS7000_digital_channels"):
 
             for row in self._channelRowsDigital:
@@ -205,7 +233,8 @@ class Channels:
                 row[-1] = contactType        # last element
             # Now that we have updated every row call method to output codeplug
             if (numAliasNotFound > 0):
-                debug_output("Did not find {numAliasNotFond} talkgroups in TalkGroups.CSV\n{aliasNotFound}")
+                #update_debug_output("Did not find {numAliasNotFond} talkgroups in TalkGroups.CSV\n{aliasNotFound}")
+                print(f"Did not find {numAliasNotFound} talkgroups in TalkGroups.CSV\n{aliasNotFound} {type(aliasNotFound)}")
 
             return (self.Convert())
         if self._fileType == "ERROR":

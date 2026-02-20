@@ -13,8 +13,25 @@ class DigitalContacts:
         self.__fileVersion = ''
         self._rows = []
 
+        self._contactDict = {}
+
         self.__DetermineFileType()
         self.__LoadRows()
+
+    def get_all(self):
+        return list(self._rows)
+
+    def find_by_name(self, name):
+        return [c for c in self._rows if c[2] == name]
+
+    def find_by_rowId(self, rowId):
+        return [c for c in self._rows if c[0] == rowId]
+
+    def remove(self, name):
+        self._rows = [c for c in self._rows if c[2] != name]
+
+        # Rebuild the alias name to row id
+        self._buildDict()
 
 
     # ------------------------------------------------------------

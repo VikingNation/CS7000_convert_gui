@@ -25,6 +25,26 @@ class Zones:
 
         self.load(input_file)
 
+    def get_all(self):
+        """
+        Return a list of (zoneName, channelList) tuples.
+        This preserves encapsulation while allowing iteration.
+        """
+        return [(zone, list(channels)) for zone, channels in self._zonesDict.items()]
+
+
+    def replace_channel(self, old_name, new_name):
+        """
+        Replace all occurrences of old_name with new_name in every zone.
+        """
+        for zone, channelList in self._zonesDict.items():
+            self._zonesDict[zone] = [
+                new_name if ch == old_name else ch
+                for ch in channelList
+            ]
+
+
+
     def getNumberZones(self):
         return len(self._zonesDict)
 
