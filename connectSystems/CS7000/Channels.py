@@ -35,9 +35,9 @@ class Channels:
 
     def channel_type(self, e : list):
         bw = e[3]
-        if ( bw == "12.5"):
+        if ( str(bw) == "12.5"):
             return "Analog"
-        elif ( bw == "25"):
+        elif ( str(bw) == "25"):
             return "Analog"
         else:
             return "DMR"
@@ -77,25 +77,25 @@ class Channels:
 
     def remove(self, ch : list):
         if self.channel_type(ch) == "Analog":
-            self.remove_analog(ch[1])
+            self.remove_analog(ch)
         elif self.channel_type(ch) == "DMR":
-            self.remove_digital(ch[1])
+            self.remove_digital(ch)
+        else:
+            print("Channels.remove(): could not determine type of channel")
 
-    def remove_analog(self, name):
-        self._channelRowsAnalogTemp = [c for c in self._channelRowsAnalog if c[1] != name]
+        # Updae the Uhf and Vhf channnel lists
+        if ch[1] in self._UhfChannels:
+            del self._UhfChannels[ch[1]]
+        elif ch[1] in self._VhfChannels:
+            del self._vhfChannels[ch[1]]
+
+    def remove_analog(self, ch : list):
+        self._channelRowsAnalogTemp = [c for c in self._channelRowsAnalog if c[1:] != ch[1:] ]
         self._channelRowsAnalog = self._channelRowsAnalogTemp
-        if name in self_UhfChannels:
-            del self._UhfChannels[name]
-        elif name in self._VhfChannels:
-            del self._VhfChannels[name]
 
-    def remove_digital(self, name):
-        self._channelRowsDigitalTemp = [c for c in self._channelRowsDigital if c[1] != name]
+    def remove_digital(self, ch : int):
+        self._channelRowsDigitalTemp = [c for c in self._channelRowsDigital if c[1:] != ch[1:] ]
         self._channelRowsDigital = self._channelRowsDigitalTemp
-        if name in self._UhfChannels:
-            del self._UhfChannels[name]
-        elif name in self._VhfChannels:
-            del self._vhfChannels[name]
 
     def update_contact_name(self, old_alias, new_alias):
         for ch in self._channelRowsDigital:
@@ -141,7 +141,7 @@ class Channels:
                         self._channelRowsDigital.append(row)
                     else:
                         # Anytone
-                        channelName = row[1]
+                        channelName = str(row[1])
                         mode = row[4]
 
                         # Normalize mode
@@ -238,7 +238,7 @@ class Channels:
 
     def whereEndFirmware(self):
         a = self._endFirmwareAnalog
-        print(f"Firmware end of Analog Channels = {a}  Digital Channels = {self._endFirmwareDigital}")
+        print(f"Channels.whereEndFirmware():  Firmware end of Analog Channels = {a}  Digital Channels = {self._endFirmwareDigital}")
 
     def Convert(self):
         if self._fileType in ("Anytone", "CS7000_analog_channels", "CS7000_digital_channels"):
