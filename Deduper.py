@@ -59,8 +59,8 @@ class Deduper:
         # Note we must delete duplicate channels first becuase for dedupe contacts we modify talk groups names
         #  If we do the contacts first this will cause issues with the search comparision
         self.channels.whereEndFirmware()
-        self._dedupe_contacts()
         self._dedupe_channels()
+        self._dedupe_contacts()
         #self._update_zones()
         self._report()
 

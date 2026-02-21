@@ -33,6 +33,12 @@ class Channels:
         self._analogRowsWritten = 0
         self._digitalRowsWritten = 0
 
+    def lenAnalog(self):
+        return len(self._channelRowsAnalog)
+
+    def lenDigital(self):
+        return len(self._channelRowsDigital)
+
     def channel_type(self, e : list):
         bw = e[3]
         if ( str(bw) == "12.5"):
@@ -89,13 +95,11 @@ class Channels:
         elif ch[1] in self._VhfChannels:
             del self._vhfChannels[ch[1]]
 
-    def remove_analog(self, ch : list):
-        self._channelRowsAnalogTemp = [c for c in self._channelRowsAnalog if c[1:] != ch[1:] ]
-        self._channelRowsAnalog = self._channelRowsAnalogTemp
+    def remove_analog(self, ch):
+        self._channelRowsAnalog = [c for c in self._channelRowsAnalog if c[1:] != ch[1:] ]
 
-    def remove_digital(self, ch : int):
-        self._channelRowsDigitalTemp = [c for c in self._channelRowsDigital if c[1:] != ch[1:] ]
-        self._channelRowsDigital = self._channelRowsDigitalTemp
+    def remove_digital(self, ch):
+        self._channelRowsDigital = [c for c in self._channelRowsDigital if c[1:] != ch[1:] ]
 
     def update_contact_name(self, old_alias, new_alias):
         for ch in self._channelRowsDigital:
