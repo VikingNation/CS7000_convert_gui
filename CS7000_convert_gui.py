@@ -209,14 +209,12 @@ def convert_codeplug():
         channels = Channels(channels_file, converted_channels_file, includeAnalogChannels)
 
     # Run Deduper
-    dedupe = Deduper(contacts, channels, None, None)
+    dedupe = Deduper(root, contacts, channels, None, None)
     dedupe.run()
 
     # output list sizes
     lenAnalog = channels.lenAnalog()
     lenDigital = channels.lenDigital()
-
-    print(f"Len contacts (analog, DMR) ({lenAnalog}, {lenDigital})")
 
     numberChannels = channels.getNumberChannels()
     if numberChannels <= Const.MAXCHANNELS:

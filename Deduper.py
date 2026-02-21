@@ -17,6 +17,7 @@ from collections import defaultdict
 from connectSystems.CS7000.Channels import Channels
 from connectSystems.CS7000.DigitalContacts import DigitalContacts
 from connectSystems.CS7000.Zones import Zones
+from ContactSelector import ContactSelector
 
 class Deduper:
     """
@@ -38,11 +39,11 @@ class Deduper:
             - show_deleted_summary(contacts, channels)
     """
 
-    def __init__(self, contacts, channels, zones, ui):
+    def __init__(self, root, contacts, channels, zones, ui):
         self.contacts = contacts
         self.channels = channels
         self.zones = zones
-        self.ui = ui
+        self.root = root
 
         # Tracking removed items for reporting
         self.contacts_deleted = []
@@ -51,6 +52,12 @@ class Deduper:
         # Mapping for channel name replacements
         self.channel_replacements = {}
 
+
+
+    def ask_user_to_select_contact(self, entries):
+        dialog = ContactSelector(self.root, entries)
+        dialog.wait_window()
+        return dialog.selected
     # ----------------------------------------------------------------------
     # PUBLIC ENTRY POINT
     # ----------------------------------------------------------------------
@@ -61,7 +68,6 @@ class Deduper:
         self.channels.whereEndFirmware()
         self._dedupe_channels()
         self._dedupe_contacts()
-        #self._update_zones()
         self._report()
 
     # ----------------------------------------------------------------------
@@ -75,9 +81,7 @@ class Deduper:
 
         for dmr_id, entries in duplicates.items():
             # For a given ID (Talkgroup/Contact ID) ask user which Alias they want to keep
-            #keep = self.ui.ask_user_to_select_contact(entries)
-            # For testing purposes let's keep the first one
-            keep = entries[0]
+            keep = self.ask_user_to_select_contact(entries)
             # Build list of rows that need deleting
             delete = [e for e in entries if e != keep]
 
