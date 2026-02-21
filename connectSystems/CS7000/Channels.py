@@ -14,6 +14,11 @@ class Channels:
         self._UhfChannels = {}
         self._VhfChannels = {}
 
+        # Track where firmware analog and digital channels end
+        # Note: In order for this to work you must load firmware channels file
+        self._endFirmwareAnalog = 0
+        self._endFirmwareDigital = 0
+
         # Setup header and default row records
         self._SetArrays()
         self._channelRowsAnalog = []
@@ -28,6 +33,36 @@ class Channels:
         self._analogRowsWritten = 0
         self._digitalRowsWritten = 0
 
+    def channel_type(self, e : list):
+        bw = e[3]
+        if ( bw == "12.5"):
+            return "Analog"
+        elif ( bw == "25"):
+            return "Analog"
+        else:
+            return "DMR"
+
+    # If channel is from firmware return True otherwise false
+
+    def isFirmwareChannel(self, e : list):
+        if self.channel_type(e) == "Analog":
+            if int(e[0]) <= self._endFirmwareAnalog:
+                return True
+            else:
+                return False
+        elif self.channel_type(e) == "DMR":
+            if int(e[0]) <= self._endFirmwareDigital:
+                return True
+            else:
+                return False
+
+    def get_all(self):
+        analog = self.get_all_analog()
+        digital = self.get_all_digital()
+        combined = [*analog, *digital]
+        return combined
+
+
     def get_all_analog(self):
         return list(self._channelRowsAnalog)
 
@@ -40,20 +75,32 @@ class Channels:
     def find_digital_by_name(self, name):
         return [c for c in self._channelRowsDigital if c[1] == name]
 
-    def remove_analog(self, name):
-        self._channelRowsAnalog = [c for c in self._channelRowsAnalog if c[1] != name]
-        self._Uhfchannels = [c for c in self._Uhfchannels if c[1] != name]
+    def remove(self, ch : list):
+        if self.channel_type(ch) == "Analog":
+            self.remove_analog(ch[1])
+        elif self.channel_type(ch) == "DMR":
+            self.remove_digital(ch[1])
 
     def remove_analog(self, name):
-        self._channelRowsDigital = [c for c in self._channelRowsDigital if c[1] != name]
-        self._Uhfchannels = [c for c in self._Uhfchannels if c[1] != name]
+        self._channelRowsAnalogTemp = [c for c in self._channelRowsAnalog if c[1] != name]
+        self._channelRowsAnalog = self._channelRowsAnalogTemp
+        if name in self_UhfChannels:
+            del self._UhfChannels[name]
+        elif name in self._VhfChannels:
+            del self._VhfChannels[name]
+
+    def remove_digital(self, name):
+        self._channelRowsDigitalTemp = [c for c in self._channelRowsDigital if c[1] != name]
+        self._channelRowsDigital = self._channelRowsDigitalTemp
+        if name in self._UhfChannels:
+            del self._UhfChannels[name]
+        elif name in self._VhfChannels:
+            del self._vhfChannels[name]
 
     def update_contact_name(self, old_alias, new_alias):
         for ch in self._channelRowsDigital:
             if ch[19] == old_alias:
-                print(f"update_contact_name:  {old_alias} => {new_alias}")
                 ch[19] = new_alias
-
 
     def getVhfChannels(self):
         return (self._VhfChannels.copy())
@@ -63,7 +110,6 @@ class Channels:
 
     def getNumberChannels(self):
         return len(self._channelRowsAnalog)+len(self._channelRowsDigital)
-
 
     def load(self,input_file):
         self.input_file = input_file
@@ -185,6 +231,14 @@ class Channels:
                             if ( mode == "FM"):
                                 self._channelRowsAnalog.append(outputRowAnalog[:])
                                 rowNum_analog += 1
+        if (self._fileType == "CS7000_analog_channels"):
+            self._endFirmwareAnalog = len(self._channelRowsAnalog)
+        elif (self._fileType == "CS7000_digital_channels"):
+            self._endFirmwareDigital = len(self._channelRowsDigital)
+
+    def whereEndFirmware(self):
+        a = self._endFirmwareAnalog
+        print(f"Firmware end of Analog Channels = {a}  Digital Channels = {self._endFirmwareDigital}")
 
     def Convert(self):
         if self._fileType in ("Anytone", "CS7000_analog_channels", "CS7000_digital_channels"):

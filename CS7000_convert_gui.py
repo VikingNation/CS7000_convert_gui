@@ -28,7 +28,7 @@ from Deduper import Deduper
 #           This version of the applicatation has been updated for
 #           CPS verseion 1.2.19.00 Beta and CS7000 Firmware version 9.00.93
 
-APP_VERSION = "1.3.1"
+APP_VERSION = "1.3.2-beta"
 
 # DEBUG FLAG
 DEBUG = True

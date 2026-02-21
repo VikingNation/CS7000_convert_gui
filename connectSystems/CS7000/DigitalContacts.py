@@ -28,7 +28,8 @@ class DigitalContacts:
         return [c for c in self._rows if c[0] == rowId]
 
     def remove(self, name):
-        self._rows = [c for c in self._rows if c[2] != name]
+        self._rowsTemp = [c for c in self._rows if c[2] != name]
+        self._rows = self._rowsTemp
 
         # Rebuild the alias name to row id
         self._buildDict()
