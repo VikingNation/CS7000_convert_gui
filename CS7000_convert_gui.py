@@ -16,6 +16,7 @@ from connectSystems.CS7000.Channels import Channels
 from connectSystems.CS7000.DigitalContacts import DigitalContacts
 from connectSystems.CS7000.Zones import Zones
 
+from Deduper import Deduper
 # CS7000_convert_gui.py
 #
 # Author: Jason Johnson <k3jsj@arrl.net>
@@ -27,8 +28,10 @@ from connectSystems.CS7000.Zones import Zones
 #           This version of the applicatation has been updated for
 #           CPS verseion 1.2.19.00 Beta and CS7000 Firmware version 9.00.93
 
-APP_VERSION = "1.3.1"
+APP_VERSION = "1.3.2-beta"
 
+# DEBUG FLAG
+DEBUG = True
 # Global variables
 root = None
 debug_output_var = None
@@ -183,6 +186,10 @@ def convert_codeplug():
     contacts = DigitalContacts(contacts_file, converted_contacts_file)
     numberContacts = contacts.getNumberContacts()
 
+
+    # Delete contacts file so we don't add information to end of file 
+    delete_file(converted_contacts_file)
+
     if numberContacts <= Const.MAXCONTACTS:
         contacts.Convert()
         errorMakingContacts = False
@@ -205,12 +212,32 @@ def convert_codeplug():
     else:
         channels = Channels(channels_file, converted_channels_file, includeAnalogChannels)
 
+    # Get any debug output from previous channel methods and clear that debug buffer
+    update_debug_output(channels.getDebugOutput())
+    channels.clear_log_output()
+
+    # Run Deduper
+    dedupe = Deduper(root, icon_file, contacts, channels)
+    dedupe.run()
+
+    # Get any debug from dedupe and output
+    update_debug_output(dedupe.getDebugOutput())
+    dedupe.clear_log_output()
+
+    # Delete channels file so we don't append information to end
+    delete_file(converted_channels_file)
+
     numberChannels = channels.getNumberChannels()
     if numberChannels <= Const.MAXCHANNELS:
         if IdMethod_var.get() == "direct":
             uhfChannels = channels.ConvertDirectMode(contacts)
         else:
             uhfChannels = channels.Convert()
+
+        # Get any output from channels from previous methods
+        update_debug_output(channels.getDebugOutput())
+        channels.clear_log_output()
+
         errorMakingChannels = False
         update_debug_output(f"Converted channels to {converted_channels_file}")
 
@@ -233,6 +260,9 @@ def convert_codeplug():
         zones.load(zones_file)
     else:
         zones = Zones(zones_file, converted_zones_file, uhfChannels)
+
+    # Delete Zones file so we don't append information to end
+    delete_file(converted_zones_file)
 
     numberZones = zones.getNumberZones()
     if numberZones <= Const.MAXZONES:
@@ -729,7 +759,11 @@ IdMethod_var = tk.StringVar(value="direct")
 configFolderPath = getConfigFolderPath()
 
 raise_above_all(root)
-show_disclaimer()
+
+if (DEBUG == False):
+    show_disclaimer()
+else:
+    build_main_ui()
 
 root.mainloop()
 

@@ -14,6 +14,11 @@ class Channels:
         self._UhfChannels = {}
         self._VhfChannels = {}
 
+        # Track where firmware analog and digital channels end
+        # Note: In order for this to work you must load firmware channels file
+        self._endFirmwareAnalog = 0
+        self._endFirmwareDigital = 0
+
         # Setup header and default row records
         self._SetArrays()
         self._channelRowsAnalog = []
@@ -28,6 +33,90 @@ class Channels:
         self._analogRowsWritten = 0
         self._digitalRowsWritten = 0
 
+        self._debug_output = ""
+
+    def log_output(self, m):
+        self._debug_output += m
+
+    def lenAnalog(self):
+        return len(self._channelRowsAnalog)
+
+    def getDebugOutput(self):
+        return self._debug_output
+
+    def clear_log_output(self):
+        self._debug_output = ""
+
+    def lenDigital(self):
+        return len(self._channelRowsDigital)
+
+    def channel_type(self, e : list):
+        bw = e[3]
+        if ( str(bw) == "12.5"):
+            return "Analog"
+        elif ( str(bw) == "25"):
+            return "Analog"
+        else:
+            return "DMR"
+
+    # If channel is from firmware return True otherwise false
+
+    def isFirmwareChannel(self, e : list):
+        if self.channel_type(e) == "Analog":
+            if int(e[0]) <= self._endFirmwareAnalog:
+                return True
+            else:
+                return False
+        elif self.channel_type(e) == "DMR":
+            if int(e[0]) <= self._endFirmwareDigital:
+                return True
+            else:
+                return False
+
+    def get_all(self):
+        analog = self.get_all_analog()
+        digital = self.get_all_digital()
+        combined = [*analog, *digital]
+        return combined
+
+
+    def get_all_analog(self):
+        return list(self._channelRowsAnalog)
+
+    def get_all_digital(self):
+        return list(self._channelRowsDigital)
+
+    def find_analog_by_name(self, name):
+        return [c for c in self._channelRowsAnalog if c[1] == name]
+
+    def find_digital_by_name(self, name):
+        return [c for c in self._channelRowsDigital if c[1] == name]
+
+    def remove(self, ch : list):
+        if self.channel_type(ch) == "Analog":
+            self.remove_analog(ch)
+        elif self.channel_type(ch) == "DMR":
+            self.remove_digital(ch)
+        else:
+            self.log_output("Channels.remove(): could not determine type of channel")
+
+        # Updae the Uhf and Vhf channnel lists
+        if ch[1] in self._UhfChannels:
+            del self._UhfChannels[ch[1]]
+        elif ch[1] in self._VhfChannels:
+            del self._vhfChannels[ch[1]]
+
+    def remove_analog(self, ch):
+        self._channelRowsAnalog = [c for c in self._channelRowsAnalog if c[1:] != ch[1:] ]
+
+    def remove_digital(self, ch):
+        self._channelRowsDigital = [c for c in self._channelRowsDigital if c[1:] != ch[1:] ]
+
+    def update_contact_name(self, old_alias, new_alias):
+        for ch in self._channelRowsDigital:
+            if ch[19] == old_alias:
+                ch[19] = new_alias
+
     def getVhfChannels(self):
         return (self._VhfChannels.copy())
 
@@ -36,7 +125,6 @@ class Channels:
 
     def getNumberChannels(self):
         return len(self._channelRowsAnalog)+len(self._channelRowsDigital)
-
 
     def load(self,input_file):
         self.input_file = input_file
@@ -68,7 +156,7 @@ class Channels:
                         self._channelRowsDigital.append(row)
                     else:
                         # Anytone
-                        channelName = row[1]
+                        channelName = str(row[1])
                         mode = row[4]
 
                         # Normalize mode
@@ -158,6 +246,14 @@ class Channels:
                             if ( mode == "FM"):
                                 self._channelRowsAnalog.append(outputRowAnalog[:])
                                 rowNum_analog += 1
+        if (self._fileType == "CS7000_analog_channels"):
+            self._endFirmwareAnalog = len(self._channelRowsAnalog)
+        elif (self._fileType == "CS7000_digital_channels"):
+            self._endFirmwareDigital = len(self._channelRowsDigital)
+
+    def whereEndFirmware(self):
+        a = self._endFirmwareAnalog
+        self.log_output(f"Channels.whereEndFirmware():  Firmware end of Analog Channels = {a}  Digital Channels = {self._endFirmwareDigital}")
 
     def Convert(self):
         if self._fileType in ("Anytone", "CS7000_analog_channels", "CS7000_digital_channels"):
@@ -170,6 +266,7 @@ class Channels:
     def ConvertDirectMode(self, contacts : DigitalContacts):
         # Update Digital Channels to use Direct mode output vice Table lookup 
         numAliasNotFound = 0
+        aliasNotFound = ""
         if self._fileType in ("Anytone", "CS7000_analog_channels", "CS7000_digital_channels"):
 
             for row in self._channelRowsDigital:
@@ -205,7 +302,8 @@ class Channels:
                 row[-1] = contactType        # last element
             # Now that we have updated every row call method to output codeplug
             if (numAliasNotFound > 0):
-                debug_output("Did not find {numAliasNotFond} talkgroups in TalkGroups.CSV\n{aliasNotFound}")
+                #update_debug_output("Did not find {numAliasNotFond} talkgroups in TalkGroups.CSV\n{aliasNotFound}")
+                self.log_output(f"Did not find {numAliasNotFound} talkgroups in TalkGroups.CSV\n{aliasNotFound} {type(aliasNotFound)}")
 
             return (self.Convert())
         if self._fileType == "ERROR":

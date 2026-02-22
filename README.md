@@ -1,7 +1,7 @@
 # CS7000 Convert GUI
 
 Author:  Jason Johnson (k3jsj@arrl.net)</br>
-Program revision: v1.3, February 7, 2026</br>
+Program revision: v1.3.2-beta, February 21, 2026</br>
 
 ## Purpose
 Application that converts an Anytone codeplug (Talk Group, Channels, and Zones) into Excel Spreadsheets for import into Connect Systems CPS software for CS7000 M17 Plus radio.
@@ -9,7 +9,7 @@ Application that converts an Anytone codeplug (Talk Group, Channels, and Zones) 
 ## CPS Dependencies
 This version works with Anytone CPS version 3.04 and beyond. This version works with CS7000 M17 PLUS CPS version 1.2.19.00Beta and Firmware 9.00.93.
 
-This version use the Table method in the Channels database.
+This version can use both the Direct and Table method method in the Channels database.
 
 ## DISCLAIMER & TERMS OF USE
 By using this software, you acknowledge and agree that you do so at your own risk. The author of this software makes no guarantees, representations, or warranties of any kind, express or implied, regarding the accuracy, reliability, or completeness of the software's output. The author shall not be held liable for any errors, omissions, or any losses, injuries, or damages arising from the use of this software.  Users are solely responsible for verifying the correctness of the software's output and for any decisions made based on such output.
@@ -34,7 +34,9 @@ You can run the application by invoking the executable or by running "python CS7
 - Click the button to select the output directory for the CS7000 spreadsheets.
 - Select if you want to output digital + analog or digital only channels
 - Select if you want to include the default Zones and Channels that come preinstalled with the CS7000.
-- Finally, click the Convert Codeplug button
+- Select the method to populate the Contact information in the Channels database. Table method will create Contacts spreadsheet and use name. Direct method will NOT crate Contacts spreadsheet and use ID (Talkgroup/DMRID).
+- Finally, click the Convert Codeplug button.
+- If your codeplug has any dupliate Contacts or Channels you will be presented with a dialog box. You must select what Contact and Channel to keep. Duplicates will be deleted.
 
 ### CS7000 CPS
 - Open the CS7000 CPS.
@@ -62,7 +64,12 @@ $venv\scripts\activate
 
 $pip install -r requirements.txt
 
-$pyinstaller --onefile CS7000_convert_gui.py --splash CS7000_splash_scaled.png -n CS7000_convert_gui-v1.3
+$build.bat
+
+
+Executable is built using
+
+pyinstaller --onefile CS7000_convert_gui.py --splash CS7000_splash_scaled.png -n CS7000_convert_gui-v1.3.2-beta
 
 
 The application will be in the dist folder.
