@@ -17,6 +17,7 @@ from connectSystems.CS7000.Channels import Channels
 from connectSystems.CS7000.DigitalContacts import DigitalContacts
 from connectSystems.CS7000.Zones import Zones
 from ContactSelector import ContactSelector
+from ChannelSelector import ChannelSelector
 
 class Deduper:
     """
@@ -60,6 +61,13 @@ class Deduper:
         dialog = ContactSelector(self.root, self.path_icon_file, entries)
         dialog.wait_window()
         return dialog.selected
+
+    def ask_user_to_select_channels(self, entries):
+        dialog = ChannelSelector(self.root, self.path_icon_file, entries)
+        dialog.wait_window()
+        return dialog.selected
+
+
     # ----------------------------------------------------------------------
     # PUBLIC ENTRY POINT
     # ----------------------------------------------------------------------
@@ -121,14 +129,14 @@ class Deduper:
                 keep = entries[0]
             else:
                 # First element is not from firmware. Prompt user to select 
-                #keep = self.ui.ask_user_to_select_channel(entries)
-                keep = entries[0]
+                keep = self.ask_user_to_select_channels(entries)
 
             # Process duplicate channels and build list of elements to delete
             delete = [e for e in entries if e != keep]
 
             # Record replacement mapping
-            self.channel_replacements[name] = keep[1]
+            if ( keep is not None):
+                self.channel_replacements[name] = keep[1]
 
             # Remove deleted channels
             for d in delete:
