@@ -59,11 +59,15 @@ class Deduper:
 
     def ask_user_to_select_contact(self, entries):
         dialog = ContactSelector(self.root, self.path_icon_file, entries)
+        dialog.deiconify()
+        dialog.grab_set()
         dialog.wait_window()
         return dialog.selected
 
     def ask_user_to_select_channels(self, entries):
         dialog = ChannelSelector(self.root, self.path_icon_file, entries)
+        dialog.deiconify()
+        dialog.grab_set()
         dialog.wait_window()
         return dialog.selected
 

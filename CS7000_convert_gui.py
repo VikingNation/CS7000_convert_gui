@@ -4,6 +4,7 @@ import sys
 import csv
 import platform
 import tkinter as tk
+import webbrowser
 from tkinter import filedialog, messagebox
 
 import ttkbootstrap as tb
@@ -31,9 +32,13 @@ from Deduper import Deduper
 APP_VERSION = "1.3.2-beta"
 
 # DEBUG FLAG
-DEBUG = True
+DEBUG = False
 # Global variables
 root = None
+
+# Disclaimer window
+disclaimer = None
+
 debug_output_var = None
 debug_output_text = None
 
@@ -49,6 +54,23 @@ def resource_path(filename):
     if hasattr(sys, "_MEIPASS"):
         return os.path.join(sys._MEIPASS, filename)
     return os.path.join(os.path.abspath("."), filename)
+
+# Function that runs when user selects terms of program
+def accept_terms():
+    show_main_ui()
+
+def show_main_ui():
+    root.deiconify()
+    root.update_idletasks()
+    root.minsize(root.winfo_width(),root.winfo_height())
+
+def show_disclaimer(window):
+    window.deiconify()
+    window.grab_set()
+
+def show_terms_of_use():
+    disclaimer = build_disclaimer()
+    show_disclaimer(disclaimer)
 
 def update_debug_output(text: str):
     """
@@ -363,6 +385,8 @@ def build_main_ui():
     helpmenu.add_command(label="Show Help", command=show_help)
     helpmenu.add_separator()
     helpmenu.add_command(label="About", command=show_about)
+    helpmenu.add_command(label="Show terms of Use", command=show_terms_of_use)
+    helpmenu.add_separator()
     helpmenu.add_command(label="Exit App", command=exit_application)
     menubar.add_cascade(label="Help", menu=helpmenu)
     root.config(menu=menubar)
@@ -507,21 +531,17 @@ def build_main_ui():
     raise_above_all(root)
 
 def show_about():
-    import webbrowser
-
     # Create window minimized first (prevents flicker)
     about_win = tb.Toplevel(root)
-    about_win.title("About CS7000 Code Plug Utility")
     about_win.withdraw()
     about_win.iconify()
+    about_win.title("About CS7000 Code Plug Utility")
 
     # Load icon image
     icon_img = tk.PhotoImage(file=resource_path(icon_file))
     about_win.iconphoto(False, icon_img)
 
     about_win.resizable(False, False)
-    about_win.transient(root)
-    about_win.grab_set()
 
     # --- MAIN FRAME ---
     frame = tb.Frame(about_win, padding=20)
@@ -583,6 +603,9 @@ def show_about():
 
     # --- Compute size while hidden ---
     about_win.update_idletasks()
+    about_win.transient(root)
+    about_win.grab_set()
+
 
     # --- Restore from iconified state ---
     about_win.deiconify()
@@ -595,9 +618,8 @@ def show_about():
     raise_above_all(about_win)
 
 def show_help():
-    import webbrowser
-
     help_win = tb.Toplevel(root)
+    help_win.withdraw()
     help_win.title(f"Help - CS7000 Code Plug Utility - Version {APP_VERSION}")
     help_win.iconphoto(False, tk.PhotoImage(file=resource_path(icon_file)))
 
@@ -649,13 +671,16 @@ def show_help():
     y = root.winfo_y() + 50
     help_win.geometry(f"+{x}+{y}")
 
+    help_win.deiconify()
+    help_win.grab_set()
+
     raise_above_all(help_win)
 
 def reject_terms():
     root.destroy()
 
 
-def show_disclaimer():
+def build_disclaimer():
     disclaim_text = (
         "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA512\n\n"
         "DISCLAIMER and TERMS OF USE:\n"
@@ -681,6 +706,7 @@ def show_disclaimer():
     )
 
     dialog = tb.Toplevel(root)
+    dialog.withdraw()
     dialog.title("Disclaimer and Terms of Use")
     dialog.iconphoto(False, tk.PhotoImage(file=resource_path(icon_file)))
 
@@ -710,7 +736,7 @@ def show_disclaimer():
         button_frame,
         text="Accept",
         bootstyle="success",
-        command=lambda: (dialog.destroy(), build_main_ui()),
+        command=lambda: (dialog.destroy(), accept_terms()),
     )
     accept_button.pack(side="left", padx=20, pady=10)
 
@@ -731,8 +757,8 @@ def show_disclaimer():
     y = root.winfo_y() + 50
     dialog.geometry(f"+{x}+{y}")
 
-    raise_above_all(dialog)
-
+    # return dialog
+    return dialog
 
 # --- Application startup ---
 
@@ -743,10 +769,12 @@ except Exception:
     pass
 
 root = tb.Window(themename="flatly")
+root.withdraw()
 root.title(
     f"CS7000 Code Plug Utility - By Jason Johnson (K3JSJ) <k3jsj@arrl.net>  Version {APP_VERSION}"
 )
 root.iconphoto(False, tk.PhotoImage(file=resource_path(icon_file)))
+root.protocol("WM_DELETE_WINDOW", exit_application)
 
 # Initialize variables BEFORE any debug logging
 debug_output_var = tk.StringVar(value="")
@@ -757,13 +785,16 @@ default_zones_channels_var = tk.StringVar(value="include")
 IdMethod_var = tk.StringVar(value="direct")
 
 configFolderPath = getConfigFolderPath()
+build_main_ui()
 
-raise_above_all(root)
-
+# If debug mode do not display terms of use dialog; instead, call show main ui
 if (DEBUG == False):
-    show_disclaimer()
+    show_terms_of_use()
+
+    #disclaimer = build_disclaimer()
+    #show_disclaimer(disclaimer)
 else:
-    build_main_ui()
+    show_main_ui()
 
 root.mainloop()
 

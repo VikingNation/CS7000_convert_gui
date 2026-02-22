@@ -16,6 +16,7 @@ class ContactSelector(tk.Toplevel):
     def __init__(self, parent, path_icon_file, entries):
         super().__init__(parent)
         self.title("Select Contact to Keep")
+        self.withdraw()
         self.entries = entries
         self.selected = None
         self.path_icon_file = path_icon_file

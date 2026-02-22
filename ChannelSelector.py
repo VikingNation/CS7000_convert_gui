@@ -14,6 +14,7 @@ def resource_path(filename):
 class ChannelSelector(tk.Toplevel):
     def __init__(self, parent, path_icon_file, entries):
         super().__init__(parent)
+        self.withdraw()
         self.title("Select Channel to Keep")
         self.entries = entries
         self.selected = None
