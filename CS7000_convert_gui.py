@@ -186,6 +186,10 @@ def convert_codeplug():
     contacts = DigitalContacts(contacts_file, converted_contacts_file)
     numberContacts = contacts.getNumberContacts()
 
+
+    # Delete contacts file so we don't add information to end of file 
+    delete_file(converted_contacts_file)
+
     if numberContacts <= Const.MAXCONTACTS:
         contacts.Convert()
         errorMakingContacts = False
@@ -220,6 +224,9 @@ def convert_codeplug():
     update_debug_output(dedupe.getDebugOutput())
     dedupe.clear_log_output()
 
+    # Delete channels file so we don't append information to end
+    delete_file(converted_channels_file)
+
     numberChannels = channels.getNumberChannels()
     if numberChannels <= Const.MAXCHANNELS:
         if IdMethod_var.get() == "direct":
@@ -253,6 +260,9 @@ def convert_codeplug():
         zones.load(zones_file)
     else:
         zones = Zones(zones_file, converted_zones_file, uhfChannels)
+
+    # Delete Zones file so we don't append information to end
+    delete_file(converted_zones_file)
 
     numberZones = zones.getNumberZones()
     if numberZones <= Const.MAXZONES:
