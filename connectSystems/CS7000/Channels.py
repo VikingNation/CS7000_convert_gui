@@ -33,8 +33,19 @@ class Channels:
         self._analogRowsWritten = 0
         self._digitalRowsWritten = 0
 
+        self._debug_output = ""
+
+    def log_output(self, m):
+        self._debug_output += m
+
     def lenAnalog(self):
         return len(self._channelRowsAnalog)
+
+    def getDebugOutput(self):
+        return self._debug_output
+
+    def clear_log_output(self):
+        self._debug_output = ""
 
     def lenDigital(self):
         return len(self._channelRowsDigital)
@@ -87,7 +98,7 @@ class Channels:
         elif self.channel_type(ch) == "DMR":
             self.remove_digital(ch)
         else:
-            print("Channels.remove(): could not determine type of channel")
+            self.log_output("Channels.remove(): could not determine type of channel")
 
         # Updae the Uhf and Vhf channnel lists
         if ch[1] in self._UhfChannels:
@@ -242,7 +253,7 @@ class Channels:
 
     def whereEndFirmware(self):
         a = self._endFirmwareAnalog
-        print(f"Channels.whereEndFirmware():  Firmware end of Analog Channels = {a}  Digital Channels = {self._endFirmwareDigital}")
+        self.log_output(f"Channels.whereEndFirmware():  Firmware end of Analog Channels = {a}  Digital Channels = {self._endFirmwareDigital}")
 
     def Convert(self):
         if self._fileType in ("Anytone", "CS7000_analog_channels", "CS7000_digital_channels"):
@@ -292,7 +303,7 @@ class Channels:
             # Now that we have updated every row call method to output codeplug
             if (numAliasNotFound > 0):
                 #update_debug_output("Did not find {numAliasNotFond} talkgroups in TalkGroups.CSV\n{aliasNotFound}")
-                print(f"Did not find {numAliasNotFound} talkgroups in TalkGroups.CSV\n{aliasNotFound} {type(aliasNotFound)}")
+                self.log_output(f"Did not find {numAliasNotFound} talkgroups in TalkGroups.CSV\n{aliasNotFound} {type(aliasNotFound)}")
 
             return (self.Convert())
         if self._fileType == "ERROR":

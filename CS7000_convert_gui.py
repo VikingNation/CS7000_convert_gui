@@ -208,13 +208,17 @@ def convert_codeplug():
     else:
         channels = Channels(channels_file, converted_channels_file, includeAnalogChannels)
 
+    # Get any debug output from previous channel methods and clear that debug buffer
+    update_debug_output(channels.getDebugOutput())
+    channels.clear_log_output()
+
     # Run Deduper
-    dedupe = Deduper(root, contacts, channels, None, None)
+    dedupe = Deduper(root, icon_file, contacts, channels)
     dedupe.run()
 
-    # output list sizes
-    lenAnalog = channels.lenAnalog()
-    lenDigital = channels.lenDigital()
+    # Get any debug from dedupe and output
+    update_debug_output(dedupe.getDebugOutput())
+    dedupe.clear_log_output()
 
     numberChannels = channels.getNumberChannels()
     if numberChannels <= Const.MAXCHANNELS:
@@ -222,6 +226,11 @@ def convert_codeplug():
             uhfChannels = channels.ConvertDirectMode(contacts)
         else:
             uhfChannels = channels.Convert()
+
+        # Get any output from channels from previous methods
+        update_debug_output(channels.getDebugOutput())
+        channels.clear_log_output()
+
         errorMakingChannels = False
         update_debug_output(f"Converted channels to {converted_channels_file}")
 

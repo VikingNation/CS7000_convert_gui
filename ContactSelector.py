@@ -1,14 +1,25 @@
+import os
+import sys
 import tkinter as tk
 import ttkbootstrap as ttk
 from ttkbootstrap.dialogs import Messagebox
 
+def resource_path(filename):
+    """Return absolute path to resource, works for dev and PyInstaller EXE."""
+    if hasattr(sys, "_MEIPASS"):
+        return os.path.join(sys._MEIPASS, filename)
+    return os.path.join(os.path.abspath("."), filename)
+
+
+
 class ContactSelector(tk.Toplevel):
-    def __init__(self, parent, entries):
+    def __init__(self, parent, path_icon_file, entries):
         super().__init__(parent)
         self.title("Select Contact to Keep")
         self.entries = entries
         self.selected = None
-
+        self.path_icon_file = path_icon_file
+        self.iconphoto(False, tk.PhotoImage(file=resource_path(self.path_icon_file)))
         # Modal behavior
         self.transient(parent)
         self.grab_set()

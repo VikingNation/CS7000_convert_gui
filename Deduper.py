@@ -1,14 +1,13 @@
 """
 Deduper.py
 -----------
-Centralized deduplication logic for Digital Contacts, Channels, and Zones
+Centralized deduplication logic for Digital Contacts and Channels
 used by the CS7000_convert_gui application.
 
 This module performs:
 1. Duplicate Digital Contact detection and resolution
 2. Duplicate Channel Name detection and resolution
-3. Zone updates to reflect deduped channel names
-4. Reporting of removed items
+3. Reporting of removed items
 
 UI interactions (dialogs, prompts) are delegated to the UI layer.
 """
@@ -25,37 +24,40 @@ class Deduper:
 
     Parameters
     ----------
+    root : Root window from Tk
+    path_icon_file : Path to icon for top of window for ContactSelector
     contacts : DigitalContacts
         The DigitalContacts storage object.
     channels : Channels
         The Channels storage object.
-    zones : Zones
-        The Zones storage object.
-    ui : object
-        UI interface providing:
-            - ask_user_to_select_contact(duplicates)
-            - ask_user_to_select_channel(duplicates)
-            - show_message(text)
-            - show_deleted_summary(contacts, channels)
     """
 
-    def __init__(self, root, contacts, channels, zones, ui):
+    def __init__(self, root, path_icon_file, contacts, channels):
         self.contacts = contacts
         self.channels = channels
-        self.zones = zones
         self.root = root
+        self.path_icon_file = path_icon_file
 
         # Tracking removed items for reporting
         self.contacts_deleted = []
         self.channels_deleted = []
 
+        self._debug_output = ""
+
         # Mapping for channel name replacements
         self.channel_replacements = {}
 
+    def log_output(self, m):
+        self._debug_output += m
 
+    def clear_log_output(self):
+        self._debug_output = ""
+
+    def getDebugOutput(self):
+        return self._debug_output
 
     def ask_user_to_select_contact(self, entries):
-        dialog = ContactSelector(self.root, entries)
+        dialog = ContactSelector(self.root, self.path_icon_file, entries)
         dialog.wait_window()
         return dialog.selected
     # ----------------------------------------------------------------------
@@ -65,7 +67,6 @@ class Deduper:
         """Run the full dedupe pipeline."""
         # Note we must delete duplicate channels first becuase for dedupe contacts we modify talk groups names
         #  If we do the contacts first this will cause issues with the search comparision
-        self.channels.whereEndFirmware()
         self._dedupe_channels()
         self._dedupe_contacts()
         self._report()
@@ -164,23 +165,12 @@ class Deduper:
         if not self.contacts_deleted:
             return
 
-        print(f"Removed the following contacts")
+        self.log_output(f"Removed the following duplicate contacts\n")
         for e in self.contacts_deleted:
-            print(f"{e}")
-        print("\n")
+            self.log_output(f"{e}\n\n")
+        self.log_output("\n")
 
-        print(f"Removed the following channels ({len(self.channels_deleted)})")
+        self.log_output(f"Removed the following duplicate channels ({len(self.channels_deleted)})\n")
         for e in self.channels_deleted:
-            print(f"{e}")
-        print("\n")
-
-        return
-        if not self.contacts_deleted and not self.channels_deleted:
-            self.ui.show_message("No duplicate contacts or channels were found.")
-            return
-
-        self.ui.show_deleted_summary(
-            contacts=self.contacts_deleted,
-            channels=self.channels_deleted
-        )
-
+            self.log_output(f"{e}")
+        self.log_output("\n")
