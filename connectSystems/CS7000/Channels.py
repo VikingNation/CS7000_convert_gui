@@ -2,6 +2,7 @@ import os
 import csv
 import sys
 import openpyxl
+import re
 from connectSystems.CS7000.DigitalContacts import DigitalContacts
 from openpyxl import Workbook
 from hashlib import sha256
@@ -191,6 +192,8 @@ class Channels:
 
                         if mode == "DMR":
                             call_alias = row[9]
+                            # Replace special characters with a period
+                            call_alias = re.sub('-', '.', call_alias)
                             timeslot = row[21]
                             colorCode = row[20]
                         else:

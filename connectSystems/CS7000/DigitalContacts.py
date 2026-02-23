@@ -1,5 +1,6 @@
 import csv
 import connectSystems.CS7000.Constants
+import re
 from hashlib import sha256
 import xlsxwriter
 
@@ -45,6 +46,8 @@ class DigitalContacts:
         with open(self.input_file, mode='r', newline='', encoding="utf-8") as infile:
             reader = csv.reader(infile)
             for row in reader:
+                # Replace special characters in Alias with periods
+                row[2] = re.sub('-', '.', row[2])
                 self._rows.append(row)
 
         self.__rowsInFile = len(self._rows)
